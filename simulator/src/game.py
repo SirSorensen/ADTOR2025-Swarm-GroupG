@@ -1,7 +1,7 @@
 import pygame
 from consts import HEIGHT, WIDTH
 
-def init_pygame():
+def init_pygame() -> tuple[pygame.Surface, pygame.font.Font]:
 	pygame.init()
 	screen = pygame.display.set_mode((WIDTH, HEIGHT))
 	pygame.display.set_caption("Robots Detecting Each Other and Obstacles with Proximity & RAB")

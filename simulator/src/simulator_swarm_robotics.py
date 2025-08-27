@@ -29,7 +29,7 @@ ARENA_BOUNDS = {
 def main():
     clock = pygame.time.Clock()
     dt = SIM_DT
-    robots = []
+    robots : list[Robot] = []
 
     np.random.seed(42)
     for i in range(NUM_ROBOTS):
