@@ -28,7 +28,7 @@ RAB_DROPOUT = 0  # chance to drop a signal
 ORIENTATION_NOISE_STD = 0 # noise in IMU readings of the robot’s own orientation
 
 class Robot:
-    def __init__(self, id, pos, heading):
+    def __init__(self, id : int, pos : np.ndarray[tuple[int, ...], np.dtype[np.float64]], heading : float):
         self.id = id
         self._pos = np.array(pos, dtype=float)
         self._heading = heading

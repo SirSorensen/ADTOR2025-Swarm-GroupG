@@ -3,11 +3,6 @@ import numpy as np
 # sensor noise and dropout
 LIGHT_NOISE_STD = 0 # noise in perceived light
 
-LIGHT_SOURCES = [
-    #LightSource(pos=(100, 100), intensity=1.0, core_radius=50, decay_radius=300),
-    #LightSource(pos=(700, 500), intensity=0.9, core_radius=10, decay_radius=100)
-]
-
 class LightSource:
     def __init__(self, pos, intensity=1.0, core_radius=0, decay_radius=200):
         self.pos = np.array(pos, dtype=float)
@@ -22,6 +17,13 @@ class LightSource:
             return self.intensity
         # Inverse-square decay beyond the center radius (you can change to linear or exponential)
         return self.intensity * max(0.0, 1.0 - ((dist - self.core_radius) / (self.decay_radius - self.core_radius)) ** 2)
+
+
+LIGHT_SOURCES : list[LightSource] = [
+    #LightSource(pos=(100, 100), intensity=1.0, core_radius=50, decay_radius=300),
+    #LightSource(pos=(700, 500), intensity=0.9, core_radius=10, decay_radius=100)
+]
+
 
 # Utility function to sum light intensity from all sources
 def _get_light_intensity(pos):

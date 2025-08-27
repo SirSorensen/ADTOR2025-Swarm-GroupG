@@ -7,7 +7,7 @@ class Obstacle:
         self.radius = radius
         self.type = "obstacle"  # used in sensing
 
-OBSTACLES = [
+OBSTACLES : list[Obstacle] = [
     #Obstacle(pos=(200, 150), radius=20),
     #Obstacle(pos=(600, 120), radius=30),
 ]
