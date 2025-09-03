@@ -69,7 +69,7 @@ def main():
             for robot in robots:
                 robot.move(dt)
 
-            metrics = compute_metrics()
+            metrics = compute_metrics(robots)
             log_metrics(frame_count, total_time, metrics)
 
             frame_count += 1
