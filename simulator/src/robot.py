@@ -1,10 +1,13 @@
+import math
+from random import uniform
 import numpy as np
 import pygame
+from pygame.time import Clock
 from consts import HEIGHT, WIDTH
 from light_source import _get_light_intensity
 
 # Parameters
-NUM_ROBOTS = 2
+NUM_ROBOTS = 8
 ROBOT_RADIUS = 10
 
 NUM_PROX_SENSORS = 6
@@ -35,6 +38,8 @@ class Robot:
         self._radius = ROBOT_RADIUS
         self._linear_velocity = MAX_SPEED * 0.5
         self._angular_velocity = 0
+        self.clock = Clock()
+        self.time_since_last_turn = self.clock.get_rawtime()
 
         #### Sensor readings
         # proximity sensors
@@ -207,7 +212,18 @@ class Robot:
             DO NOT modify robot._linear_velocity or robot._angular_velocity directly. DO NOT modify move()
             """
         # Example: move forward
-        self.set_rotation_and_speed(0, MAX_SPEED * 0.5)
+        # self.set_rotation_and_speed(0, MAX_SPEED * 0.5)
+        
+        current_angle = uniform(0,2*math.pi)
+        delta_bearing = self.compute_angle_diff(current_angle)
+        
+        collision_impending = any([r["type"] == "robot" for r in self.prox_readings])
+        if collision_impending:
+            self.set_rotation_and_speed(delta_bearing, 0.5 * MAX_SPEED)
+        else:
+            self.set_rotation_and_speed(0,0)
+            
+            
 
     def draw(self, screen):
         # --- IR proximity sensors ---
