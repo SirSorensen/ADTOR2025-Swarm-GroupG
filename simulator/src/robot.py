@@ -41,6 +41,9 @@ class Robot:
         self.clock = Clock()
         self.time_since_last_turn = self.clock.get_rawtime()
 
+        #### signal broadcast via RAB (a very short message)
+        self.broadcast_signal = None
+
         #### Sensor readings
         # proximity sensors
         self.prox_angles = np.pi / NUM_PROX_SENSORS + np.linspace(0, 2 * np.pi, NUM_PROX_SENSORS, endpoint=False)
@@ -133,7 +136,7 @@ class Robot:
                     rab_idx = int((bearing / (2 * np.pi)) * NUM_RAB_SENSORS)
 
                     self.rab_signals.append({
-                        'message': {'heading': other.orientation},
+                        'message': {'heading': other.orientation, 'comm_signal':other.broadcast_signal},
                         'distance': distance,
                         'bearing': self.rab_angles[rab_idx], # local
                         'sensor_idx': rab_idx,
@@ -198,6 +201,9 @@ class Robot:
         # Slow down when turning sharply
         linear_velocity = target_speed * (1 - min(abs(angle_diff) / np.pi, 1)) * 0.9 + 0.1
         self._set_velocity(linear_velocity, angular_velocity)
+
+    def controller_init(self):
+        pass
 
     def robot_controller(self):
         """

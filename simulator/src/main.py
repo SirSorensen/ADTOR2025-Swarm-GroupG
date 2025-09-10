@@ -37,6 +37,10 @@ def main():
         heading = np.random.uniform(0, 2 * np.pi)
         robots.append(Robot(i, pos, heading))
 
+    # initialize robot controllers
+    for robot in robots:
+        robot.controller_init()
+
     logging_init()
 
     frame_count = 0
