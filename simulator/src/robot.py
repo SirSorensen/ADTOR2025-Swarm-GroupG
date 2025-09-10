@@ -7,7 +7,7 @@ from consts import HEIGHT, WIDTH
 from light_source import _get_light_intensity
 
 # Parameters
-NUM_ROBOTS = 8
+NUM_ROBOTS = 16
 ROBOT_RADIUS = 10
 
 NUM_PROX_SENSORS = 6
@@ -220,14 +220,7 @@ class Robot:
         # Example: move forward
         # self.set_rotation_and_speed(0, MAX_SPEED * 0.5)
         
-        current_angle = uniform(0,2*math.pi)
-        delta_bearing = self.compute_angle_diff(current_angle)
-        
-        collision_impending = any([r["type"] == "robot" for r in self.prox_readings])
-        if collision_impending:
-            self.set_rotation_and_speed(delta_bearing, 0.5 * MAX_SPEED)
-        else:
-            self.set_rotation_and_speed(0,0)
+        self.align()
             
             
 
@@ -273,6 +266,13 @@ class Robot:
         # --- Heading indicator ---
         heading_vec = rotate_vector(np.array([self._radius + 2, 0]), self._heading)
         pygame.draw.line(screen, ROBOT_COLOR, self._pos, self._pos + heading_vec, 3)
+
+    def align(self):
+        heading_readings = ([r['message']['heading'] for r in self.rab_signals])
+        if len(heading_readings) > 0:
+            average_heading = sum(heading_readings)/len(heading_readings)
+            delta_bearing = self.compute_angle_diff(average_heading)
+            self.set_rotation_and_speed(delta_bearing, MAX_SPEED)
 
 def rotate_vector(vec, angle):
     c, s = np.cos(angle), np.sin(angle)
