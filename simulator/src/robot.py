@@ -217,10 +217,15 @@ class Robot:
 
             DO NOT modify robot._linear_velocity or robot._angular_velocity directly. DO NOT modify move()
             """
-        # Example: move forward
-        # self.set_rotation_and_speed(0, MAX_SPEED * 0.5)
+
+        avoid_wall = self.avoid_wall()
+        if not avoid_wall:
+            avoid_robots = self.align()
+
+            if not avoid_robots:
+                print("Nothing is wrong:) Going continuing straight ahead.")
+                self.set_rotation_and_speed(0, MAX_SPEED * 0.5)
         
-        self.align()
             
             
 
@@ -269,10 +274,14 @@ class Robot:
 
     def align(self):
         heading_readings = ([r['message']['heading'] for r in self.rab_signals])
-        if len(heading_readings) > 0:
-            average_heading = sum(heading_readings)/len(heading_readings)
+        should_activate = len(heading_readings) > 0
+        if should_activate:
+            average_heading = sum(heading_readings)/len(heading_readings) # Average heading of other robots
             delta_bearing = self.compute_angle_diff(average_heading)
+            print(f"Aligning with other robots! Turning {delta_bearing}")
             self.set_rotation_and_speed(delta_bearing, MAX_SPEED)
+        
+        return should_activate
 
     def avoid_wall(self):
         wall_reading_angles = []
