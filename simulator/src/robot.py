@@ -274,6 +274,36 @@ class Robot:
             delta_bearing = self.compute_angle_diff(average_heading)
             self.set_rotation_and_speed(delta_bearing, MAX_SPEED)
 
+    def avoid_wall(self):
+        wall_reading_angles = []
+
+        for i, angle in enumerate(self.prox_angles):
+            if self.prox_readings[i]["type"] == "wall":
+                if angle > math.pi:
+                    wall_reading_angles.append(angle - 2 * math.pi)
+                else:
+                    wall_reading_angles.append(angle)
+        
+        # See if we register any wall not behind us
+        filered_list = [r for r in wall_reading_angles if r != self.prox_angles[2] and r != (self.prox_angles[3] - 2 * math.pi)]
+        should_activate = len(filered_list) > 0
+
+        if should_activate:
+            average_angle = sum(wall_reading_angles) / len(wall_reading_angles)
+            if average_angle >= 0: # If wall is to the left or infront
+                opposite_angle = average_angle - math.pi
+            else:  # If wall is to the right
+                opposite_angle = average_angle + math.pi
+            
+            # Add randomness
+            random_angle_diff = uniform(math.pi * 0.1,math.pi * -0.1)
+            target_angle = opposite_angle + random_angle_diff
+
+            print(f"Avoiding wall! Turning {target_angle}")
+            self.set_rotation_and_speed(target_angle, MAX_SPEED)
+
+        return should_activate
+
 def rotate_vector(vec, angle):
     c, s = np.cos(angle), np.sin(angle)
     return np.array([c*vec[0] - s*vec[1], s*vec[0] + c*vec[1]])
