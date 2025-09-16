@@ -220,11 +220,11 @@ class Robot:
 
         avoid_wall = self.avoid_wall()
         if not avoid_wall:
-            avoid_robots = self.align()
+            avoid_robots = self.disperse()
 
             if not avoid_robots:
-                print("Nothing is wrong:) Going continuing straight ahead.")
-                self.set_rotation_and_speed(0, MAX_SPEED * 0.5)
+                print("Nothing is wrong:) Stopping and chilling.")
+                self.set_rotation_and_speed(0, 0)
         
             
             
@@ -282,6 +282,31 @@ class Robot:
             self.set_rotation_and_speed(delta_bearing, MAX_SPEED)
         
         return should_activate
+    
+    def disperse(self):
+        robot_angles = ([r['bearing'] for r in self.rab_signals])
+        print("robot_angles", robot_angles)
+        should_activate = len(robot_angles) > 0
+
+        if should_activate:
+            self.avoid(robot_angles)
+
+        return should_activate
+
+    def avoid(self, angle_readings):
+        average_angle = sum(angle_readings) / len(angle_readings)
+        if average_angle >= 0: # If wall is to the left or infront
+            opposite_angle = average_angle - math.pi
+        else:  # If wall is to the right
+            opposite_angle = average_angle + math.pi
+        
+        # Add randomness
+        random_angle_diff = uniform(math.pi * 0.1,math.pi * -0.1)
+        target_angle = opposite_angle + random_angle_diff
+
+        print(f"Avoiding! Turning {target_angle}")
+        self.set_rotation_and_speed(target_angle, MAX_SPEED)
+
 
     def avoid_wall(self):
         wall_reading_angles = []
@@ -298,18 +323,7 @@ class Robot:
         should_activate = len(filered_list) > 0
 
         if should_activate:
-            average_angle = sum(wall_reading_angles) / len(wall_reading_angles)
-            if average_angle >= 0: # If wall is to the left or infront
-                opposite_angle = average_angle - math.pi
-            else:  # If wall is to the right
-                opposite_angle = average_angle + math.pi
-            
-            # Add randomness
-            random_angle_diff = uniform(math.pi * 0.1,math.pi * -0.1)
-            target_angle = opposite_angle + random_angle_diff
-
-            print(f"Avoiding wall! Turning {target_angle}")
-            self.set_rotation_and_speed(target_angle, MAX_SPEED)
+            self.avoid(wall_reading_angles)
 
         return should_activate
 
