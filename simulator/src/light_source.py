@@ -20,8 +20,8 @@ class LightSource:
 
 
 LIGHT_SOURCES : list[LightSource] = [
-    #LightSource(pos=(100, 100), intensity=1.0, core_radius=50, decay_radius=300),
-    #LightSource(pos=(700, 500), intensity=0.9, core_radius=10, decay_radius=100)
+    LightSource(pos=(100, 100), intensity=1.0, core_radius=50, decay_radius=300),
+    LightSource(pos=(700, 500), intensity=0.9, core_radius=10, decay_radius=100)
 ]
 
 
