@@ -283,16 +283,6 @@ class Robot:
         
         return should_activate
     
-    def disperse(self):
-        robot_angles = ([r['bearing'] for r in self.rab_signals])
-        print("robot_angles", robot_angles)
-        should_activate = len(robot_angles) > 0
-
-        if should_activate:
-            self.avoid(robot_angles)
-
-        return should_activate
-
     def avoid(self, angle_readings):
         average_angle = sum(angle_readings) / len(angle_readings)
         if average_angle >= 0: # If wall is to the left or infront
@@ -307,6 +297,15 @@ class Robot:
         print(f"Avoiding! Turning {target_angle}")
         self.set_rotation_and_speed(target_angle, MAX_SPEED)
 
+    def disperse(self):
+        robot_angles = ([r['bearing'] for r in self.rab_signals])
+        print("robot_angles", robot_angles)
+        should_activate = len(robot_angles) > 0
+
+        if should_activate:
+            self.avoid(robot_angles)
+
+        return should_activate
 
     def avoid_wall(self):
         wall_reading_angles = []
