@@ -3,7 +3,7 @@ from random import uniform
 import numpy as np
 from readings import Objects
 
-from robot import Robot, MAX_SPEED
+from robot import Robot, MAX_SPEED, RAB_RANGE
 
 
 class Boid(Robot):
@@ -34,6 +34,48 @@ class Boid(Robot):
 
             else:
                 self.flocking()
+
+    def flocking(self):
+        heading_readings = [r.message.heading for r in self.rab_signals]
+        if len(heading_readings) == 0:
+            self.set_rotation_and_speed(0, MAX_SPEED)
+            return False
+
+        # align
+        average_heading = sum(heading_readings) / len(
+            heading_readings
+        )  # Average heading of other robots
+        align_coefficient = self.compute_angle_diff(average_heading)
+
+        # Define some method/metric for too close and should disperse a bit
+        # make delta bearing a sum of separation, cohesion and alignment
+        boids: list[dict] = self._get_boids()
+        # https://math.stackexchange.com/questions/2390443/extracting-x-and-y-values-from-radians
+        centroid = np.mean([boid["angle"] for boid in boids])
+        cohesion_coefficient = centroid
+
+        close_boids = [boid for boid in boids if boid["distance"] < RAB_RANGE / 5]
+
+        separation_coefficient = (
+            0
+            if len(close_boids) == 0
+            else np.deg2rad(
+                180 + np.rad2deg(np.mean([boid["angle"] for boid in close_boids]))
+            )
+        )
+        if separation_coefficient != 0 and self.verbose:
+            print(separation_coefficient)
+
+        delta_bearing = (
+            align_coefficient * 1
+            + separation_coefficient * 1.2
+            + cohesion_coefficient * 0.5
+        )
+        if self.verbose:
+            print(f"Aligning with other robots! Turning {delta_bearing}")
+        self.set_rotation_and_speed(delta_bearing, MAX_SPEED)
+
+        return True
 
     def avoid(self, angle_readings):
         average_angle = sum(angle_readings) / len(angle_readings)
