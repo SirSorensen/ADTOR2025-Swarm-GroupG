@@ -49,7 +49,7 @@ def main(_seed = 42):
     running = True
     paused = False
     visualize = True
-    dispersion = True
+    dispersion = False
     verbose = False
     while running:
         for event in pygame.event.get():
@@ -104,6 +104,7 @@ def main(_seed = 42):
             draw_obstacles(screen)
             for robot in robots:
                 robot.draw(screen)
+                robot.draw_vectors(screen)
             if paused:
                 txt = font.render("PAUSED", True, (255, 100, 100))
                 screen.blit(txt, (10, 30))
