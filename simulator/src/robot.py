@@ -5,6 +5,7 @@ import pygame
 from pygame.time import Clock
 from consts import HEIGHT, WIDTH
 from light_source import _get_light_intensity
+from readings import Reading, Signal, Message, Objects
 
 # Parameters
 NUM_ROBOTS = 16
@@ -54,7 +55,7 @@ class Robot:
         ]
         # RAB sensor
         self.rab_angles = np.pi / NUM_RAB_SENSORS + np.linspace(0, 2 * np.pi, NUM_RAB_SENSORS, endpoint=False)
-        self.rab_signals = []
+        self.rab_signals: list[Signal] = []
         # light sensor
         self.light_intensity = 0.0
         # IMU (Inertial Measurement Unit) sensor providing robot's orientation
@@ -104,11 +105,10 @@ class Robot:
     def read_sensors(self, robots, obstacles, arena_bounds):
 
         # Empty the sensors
-        self.prox_readings = [
-            {"distance": PROX_SENSOR_RANGE, "type": None}
-            for _ in range(NUM_PROX_SENSORS)
+        self.prox_readings : list[Reading] = [
+            Reading(PROX_SENSOR_RANGE, None) for _ in range(NUM_PROX_SENSORS)
         ]
-        self.rab_signals = []
+        self.rab_signals : list[Signal] = []
 
         # Light sensing
         self.light_intensity = _get_light_intensity(self._pos)
@@ -136,19 +136,21 @@ class Robot:
 
                     rab_idx = int((bearing / (2 * np.pi)) * NUM_RAB_SENSORS)
 
-                    self.rab_signals.append({
-                        'message': {'heading': other.orientation, 'comm_signal':other.broadcast_signal},
-                        'distance': distance,
-                        'bearing': self.rab_angles[rab_idx], # local
-                        'sensor_idx': rab_idx,
-                        'intensity': 1 / ((distance / RAB_RANGE) ** 2 + 1),
-                    })
+                    self.rab_signals.append(
+                        Signal(
+                            message=Message(other.orientation, other.broadcast_signal),
+                            distance=distance,
+                            bearing=self.rab_angles[rab_idx],  # local
+                            sensor_idx=rab_idx,
+                            intensity=1 / ((distance / RAB_RANGE) ** 2 + 1),
+                        )
+                    )
 
             # Also treat robot as obstacle (for IR)
             if distance <= PROX_SENSOR_RANGE:
                 prox_idx = int((bearing / (2 * np.pi)) * NUM_PROX_SENSORS)
-                if distance < self.prox_readings[prox_idx]["distance"]:
-                    self.prox_readings[prox_idx] = {"distance": distance, "type": "robot"}
+                if distance < self.prox_readings[prox_idx].distance:
+                    self.prox_readings[prox_idx] = Reading(distance, Objects.Robot)
 
         # Detect obstacles
         for obs in obstacles:
@@ -158,15 +160,15 @@ class Robot:
                 bearing = (np.arctan2(rel_vec[1], rel_vec[0]) - self._heading) % (2 * np.pi)
                 prox_idx = int((bearing / (2 * np.pi)) * NUM_PROX_SENSORS)
                 if distance < self.prox_readings[prox_idx]["distance"]:
-                    self.prox_readings[prox_idx] = {"distance": distance, "type": "obstacle"}
+                    self.prox_readings[prox_idx] = Reading(distance, Objects.Obstacle)
 
         # Wall sensing (raycast style)
         for i, angle in enumerate(self.prox_angles):
             global_angle = (self._heading + angle) % (2 * np.pi)
             direction = np.array([np.cos(global_angle), np.sin(global_angle)])
             wall_dist = self.compute_distance_to_wall(direction, arena_bounds, PROX_SENSOR_RANGE)
-            if wall_dist <self.prox_readings[i]["distance"]:
-                self.prox_readings[i] = {"distance": wall_dist, "type": "wall"}
+            if wall_dist < self.prox_readings[i].distance:
+                self.prox_readings[i] = Reading(wall_dist, Objects.Wall)
 
         # Read IMU for own orientation
         self.orientation = (self._heading + np.random.normal(0, ORIENTATION_NOISE_STD)) % (2 * np.pi)
@@ -224,19 +226,19 @@ class Robot:
     def draw(self, screen):
         # --- IR proximity sensors ---
         for i, reading in enumerate(self.prox_readings):
-            dist = reading["distance"]
-            obj_type = reading["type"]
+            dist = reading.distance
+            obj_type = reading.reading_type
 
             angle = self._heading + self.prox_angles[i]
             sensor_dir = np.array([np.cos(angle), np.sin(angle)])
             end_pos = self._pos + sensor_dir * dist
 
             # Color code by detected object type
-            if obj_type == "robot":
+            if obj_type == Objects.Robot:
                 color = (0, 150, 255)  # Blue
-            elif obj_type == "obstacle":
+            elif obj_type == Objects.Obstacle:
                 color = (255, 165, 0)  # Orange
-            elif obj_type == "wall":
+            elif obj_type == Objects.Wall:
                 color = (255, 255, 100)  # Yellow
             else:
                 color = (20, 80, 20)  # Green (no hit)
@@ -246,13 +248,13 @@ class Robot:
 
         # --- RAB signals ---
         for sig in self.rab_signals:
-            sig_angle = self._heading + self.rab_angles[sig['sensor_idx']]
+            sig_angle = self._heading + self.rab_angles[sig.sensor_idx]
             sensor_dir = np.array([np.cos(sig_angle), np.sin(sig_angle)])
 
             start = self._pos + sensor_dir * (self._radius + 3)
-            end = self._pos + sensor_dir * (self._radius + 3 + sig['distance'])
+            end = self._pos + sensor_dir * (self._radius + 3 + sig.distance)
 
-            intensity_color = 55+int(200 * (sig['intensity']*2-1))
+            intensity_color = 55 + int(200 * (sig.intensity * 2 - 1))
             color = (intensity_color, 50, intensity_color)
 
             pygame.draw.line(screen, color, start, end, 2)

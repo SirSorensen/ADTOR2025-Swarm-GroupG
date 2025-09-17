@@ -2,6 +2,7 @@ import math
 from random import uniform
 import numpy as np
 from robot import Robot, MAX_SPEED, RAB_RANGE
+from readings import Objects
 
 
 class Boid(Robot):
@@ -49,7 +50,9 @@ class Boid(Robot):
         return RAB_RANGE * (1 - (self.light_intensity/2))
 
     def disperse(self):
-        robot_angles = ([r['bearing'] for r in self.rab_signals if r["distance"] <= self.calc_repulsion_distance()]) # Distances seem to be around 70 - 150 and light_intensity goes from 0 to 1 it seems.
+        robot_angles = [
+            r.bearing for r in self.rab_signals if r.distance > self.light_intensity * 100
+        ] # Distances seem to be around 70 - 150 and light_intensity goes from 0 to 1 it seems.
         should_disperse = len(robot_angles) > 0
 
         if should_disperse:
@@ -66,7 +69,7 @@ class Boid(Robot):
         wall_reading_angles = []
 
         for i, angle in enumerate(self.prox_angles):
-            if self.prox_readings[i]["type"] == "wall":
+            if self.prox_readings[i].reading_type == Objects.Wall:
                 if angle > math.pi:
                     wall_reading_angles.append(angle - 2 * math.pi)
                 else:
