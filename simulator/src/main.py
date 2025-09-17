@@ -48,6 +48,8 @@ def main():
     running = True
     paused = False
     visualize = True
+    dispersion = True
+    verbose = False
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -59,6 +61,14 @@ def main():
                 elif event.key == pygame.K_SPACE:
                     visualize = not visualize
                     print("Visualization", "enabled" if visualize else "disabled", "at", total_time)
+                elif event.key == pygame.K_r:
+                    main()
+                elif event.key == pygame.K_s:
+                    dispersion = not dispersion
+                elif event.key == pygame.K_v:
+                    verbose = not verbose
+                    for r in robots:
+                        r.verbose = verbose
 
 
         if not paused:
@@ -68,7 +78,7 @@ def main():
                 robot.read_sensors(robots, OBSTACLES, ARENA_BOUNDS)
 
             for robot in robots:
-                robot.robot_controller()
+                robot.robot_controller(dispersion=dispersion)
 
             for robot in robots:
                 robot.move(dt)
