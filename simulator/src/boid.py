@@ -13,31 +13,76 @@ class Boid(Robot):
         heading: float,
     ):
         super().__init__(id, pos, heading)
-
+        
 
     def robot_controller(self, dispersion = True):
         """
-            Implement your control logic here.
-            You can access:
-            - self.rab_signals: list of received messages from other robots
-            - self.prox_readings: proximity sensor data
-            - self.light_intensity: light at current location
+        Implement your control logic here.
+        You can access:
+        - self.rab_signals: list of received messages from other robots
+        - self.prox_readings: proximity sensor data
+        - self.light_intensity: light at current location
 
-            Use only self.set_rotation_and_speed(...) to move the robot.
+        Use only self.set_rotation_and_speed(...) to move the robot.
 
-            DO NOT modify robot._linear_velocity or robot._angular_velocity directly. DO NOT modify move()
-            """
+        DO NOT modify robot._linear_velocity or robot._angular_velocity directly. DO NOT modify move()
+        """
         avoid_wall = self.avoid_wall()
         if not avoid_wall:
-            self.disperse()
-		
+            if dispersion:
+                self.disperse()
+            else:
+                self.flocking()
+
+    def flocking(self):
+        heading_readings = [r.message.heading for r in self.rab_signals]
+        if len(heading_readings) == 0:
+            self.set_rotation_and_speed(0, MAX_SPEED)
+            return False
+
+        # align
+        average_heading = sum(heading_readings) / len(
+            heading_readings
+        )  # Average heading of other robots
+        align_coefficient = self.compute_angle_diff(average_heading)
+
+        # Define some method/metric for too close and should disperse a bit
+        # make delta bearing a sum of separation, cohesion and alignment
+        boids: list[dict] = self._get_boids()
+        # https://math.stackexchange.com/questions/2390443/extracting-x-and-y-values-from-radians
+        centroid = np.mean([boid["angle"] for boid in boids])
+        cohesion_coefficient = centroid
+
+        close_boids = [boid for boid in boids if boid["distance"] < RAB_RANGE / 5]
+
+        separation_coefficient = (
+            0
+            if len(close_boids) == 0
+            else np.deg2rad(
+                180 + np.rad2deg(np.mean([boid["angle"] for boid in close_boids]))
+            )
+        )
+        if separation_coefficient != 0 and self.verbose:
+            print(separation_coefficient)
+
+        delta_bearing = (
+            align_coefficient * 1
+            + separation_coefficient * 1.2
+            + cohesion_coefficient * 0.5
+        )
+        if self.verbose:
+            print(f"Aligning with other robots! Turning {delta_bearing}")
+        self.set_rotation_and_speed(delta_bearing, MAX_SPEED)
+
+        return True
+
     def avoid(self, angle_readings):
         average_angle = sum(angle_readings) / len(angle_readings)
         if average_angle >= 0: # If wall is to the left or infront
             opposite_angle = average_angle - math.pi
         else:  # If wall is to the right
             opposite_angle = average_angle + math.pi
-        
+
         # Add randomness
         random_angle_diff = uniform(math.pi * 0.1,math.pi * -0.1)
         target_angle = opposite_angle + random_angle_diff
@@ -61,7 +106,7 @@ class Boid(Robot):
         else:
             if self.verbose:
                 print("Nothing is wrong:) Stopping and chilling.")
-            self.set_rotation_and_speed(0, 0)        
+            self.set_rotation_and_speed(0, 0)
 
         return should_disperse
 
@@ -74,7 +119,7 @@ class Boid(Robot):
                     wall_reading_angles.append(angle - 2 * math.pi)
                 else:
                     wall_reading_angles.append(angle)
-        
+
         # See if we register any wall not behind us
         filered_list = [r for r in wall_reading_angles if r != self.prox_angles[2] and r != (self.prox_angles[3] - 2 * math.pi)]
         should_activate = len(filered_list) > 0
@@ -83,3 +128,19 @@ class Boid(Robot):
             self.avoid(wall_reading_angles)
 
         return should_activate
+
+    def _get_boids(self) -> list[dict[str, float]]:
+        boids = []
+        for sig in self.rab_signals:
+            sig_angle = self._heading + self.rab_angles[sig.sensor_idx]
+            relative_dir = np.array([np.cos(sig_angle), np.sin(sig_angle)])  # radians
+
+            boids.append(
+                {
+                    "distance": sig.distance,
+                    "angle": relative_dir,
+                    "heading": sig.message.heading,
+                }
+            )
+
+        return boids
