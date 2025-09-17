@@ -26,12 +26,12 @@ ARENA_BOUNDS = {
     'bottom': HEIGHT
 }
 
-def main():
+def main(_seed = 42):
     clock = pygame.time.Clock()
     dt = SIM_DT
     robots : list[Robot] = []
 
-    np.random.seed(42)
+    np.random.seed(_seed)
     for i in range(NUM_ROBOTS):
         pos = np.random.uniform([ROBOT_RADIUS, ROBOT_RADIUS], [WIDTH - ROBOT_RADIUS, HEIGHT - ROBOT_RADIUS])
         heading = np.random.uniform(0, 2 * np.pi)
@@ -62,7 +62,12 @@ def main():
                     visualize = not visualize
                     print("Visualization", "enabled" if visualize else "disabled", "at", total_time)
                 elif event.key == pygame.K_r:
-                    main()
+                    # If shift as well, generate a new seed:
+                    if event.mod != pygame.KMOD_NONE and (event.mod & pygame.KMOD_LSHIFT or event.mod & pygame.KMOD_RSHIFT):
+                        new_seed = np.random.randint(0, 100)
+                        main(new_seed)
+                    else: # If not, use the current seed:
+                        main(_seed)
                 elif event.key == pygame.K_s:
                     dispersion = not dispersion
                 elif event.key == pygame.K_v:
