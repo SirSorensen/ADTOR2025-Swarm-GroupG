@@ -40,6 +40,7 @@ class Robot:
         self._angular_velocity = 0
         self.clock = Clock()
         self.time_since_last_turn = self.clock.get_rawtime()
+        self.verbose = False
 
         #### signal broadcast via RAB (a very short message)
         self.broadcast_signal = None
@@ -205,7 +206,7 @@ class Robot:
     def controller_init(self):
         pass
 
-    def robot_controller(self):
+    def robot_controller(self, dispersion = True):
         """
             Implement your control logic here.
             You can access:
@@ -217,16 +218,13 @@ class Robot:
 
             DO NOT modify robot._linear_velocity or robot._angular_velocity directly. DO NOT modify move()
             """
-
         avoid_wall = self.avoid_wall()
         if not avoid_wall:
-            avoid_robots = self.disperse()
+            if dispersion:
+                avoid_robots = self.disperse()
 
-            if not avoid_robots:
-                print("Nothing is wrong:) Stopping and chilling.")
-                self.set_rotation_and_speed(0, 0)
-        
-            
+            else:
+                self.flocking()
             
 
     def draw(self, screen):
@@ -272,13 +270,14 @@ class Robot:
         heading_vec = rotate_vector(np.array([self._radius + 2, 0]), self._heading)
         pygame.draw.line(screen, ROBOT_COLOR, self._pos, self._pos + heading_vec, 3)
 
-    def align(self):
+    def flocking(self):
         heading_readings = ([r['message']['heading'] for r in self.rab_signals])
         should_activate = len(heading_readings) > 0
         if should_activate:
             average_heading = sum(heading_readings)/len(heading_readings) # Average heading of other robots
             delta_bearing = self.compute_angle_diff(average_heading)
-            print(f"Aligning with other robots! Turning {delta_bearing}")
+            if self.verbose: 
+                print(f"Aligning with other robots! Turning {delta_bearing}")
             self.set_rotation_and_speed(delta_bearing, MAX_SPEED)
         
         return should_activate
@@ -294,17 +293,23 @@ class Robot:
         random_angle_diff = uniform(math.pi * 0.1,math.pi * -0.1)
         target_angle = opposite_angle + random_angle_diff
 
-        print(f"Avoiding! Turning {target_angle}")
+        if self.verbose:
+            print(f"Avoiding! Turning {target_angle}")
         self.set_rotation_and_speed(target_angle, MAX_SPEED)
 
     def disperse(self):
         robot_angles = ([r['bearing'] for r in self.rab_signals if r["distance"] > self.light_intensity*100]) # Distances seem to be around 70 - 150 and light_intensity goes from 0 to 1 it seems.
-        should_activate = len(robot_angles) > 0
+        should_disperse = len(robot_angles) > 0
 
-        if should_activate:
+        if should_disperse:
             self.avoid(robot_angles)
 
-        return should_activate
+        else:
+            if self.verbose:
+                print("Nothing is wrong:) Stopping and chilling.")
+            self.set_rotation_and_speed(0, 0)        
+
+        return should_disperse
 
     def avoid_wall(self):
         wall_reading_angles = []
