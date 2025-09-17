@@ -106,7 +106,9 @@ def main(_seed = 42):
                 robot.draw(screen)
             if paused:
                 txt = font.render("PAUSED", True, (255, 100, 100))
-                screen.blit(txt, (10, 10))
+                screen.blit(txt, (10, 30))
+            txt = font.render("Dispersion" if dispersion else "Flocking", True, (255, 100, 100))
+            screen.blit(txt, (10, 10))
             pygame.display.flip()
             pygame.display.set_caption("Robot Sim — VISUAL MODE")
         else:
