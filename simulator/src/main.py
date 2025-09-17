@@ -5,7 +5,8 @@ from drawer import draw_light_sources, draw_obstacles
 from game import init_pygame
 from log import compute_metrics, log_metrics, logging_close, logging_init
 from obstacle import OBSTACLES
-from robot import NUM_ROBOTS, ROBOT_RADIUS, Robot
+from robot import NUM_ROBOTS, ROBOT_RADIUS
+from boid import Boid
 
 # Pygame setup
 screen, font = init_pygame()
@@ -29,13 +30,13 @@ ARENA_BOUNDS = {
 def main(_seed = 42):
     clock = pygame.time.Clock()
     dt = SIM_DT
-    robots : list[Robot] = []
+    robots : list[Boid] = []
 
     np.random.seed(_seed)
     for i in range(NUM_ROBOTS):
         pos = np.random.uniform([ROBOT_RADIUS, ROBOT_RADIUS], [WIDTH - ROBOT_RADIUS, HEIGHT - ROBOT_RADIUS])
         heading = np.random.uniform(0, 2 * np.pi)
-        robots.append(Robot(i, pos, heading))
+        robots.append(Boid(i, pos, heading))
 
     # initialize robot controllers
     for robot in robots:
