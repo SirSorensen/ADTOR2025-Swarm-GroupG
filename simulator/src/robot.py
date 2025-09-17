@@ -8,7 +8,7 @@ from light_source import _get_light_intensity
 from readings import Reading, Signal, Message, Objects
 
 # Parameters
-NUM_ROBOTS = 8
+NUM_ROBOTS = 3
 ROBOT_RADIUS = 10
 
 NUM_PROX_SENSORS = 6
@@ -243,8 +243,8 @@ class Robot:
             else:
                 color = (20, 80, 20)  # Green (no hit)
 
-            pygame.draw.line(screen, color, self._pos, end_pos, 2)
-            pygame.draw.circle(screen, color, end_pos.astype(int), 3)
+            #pygame.draw.line(screen, color, self._pos, end_pos, 2)
+            #pygame.draw.circle(screen, color, end_pos.astype(int), 3)
 
         # --- RAB signals ---
         for sig in self.rab_signals:
@@ -257,14 +257,14 @@ class Robot:
             intensity_color = 55 + int(200 * (sig.intensity * 2 - 1))
             color = (intensity_color, 50, intensity_color)
 
-            pygame.draw.line(screen, color, start, end, 2)
+            #pygame.draw.line(screen, color, start, end, 2)
 
         # --- Robot body ---
         pygame.draw.circle(screen, ROBOT_COLOR, self._pos.astype(int), self._radius)
 
         # --- Heading indicator ---
         heading_vec = rotate_vector(np.array([self._radius + 2, 0]), self._heading)
-        pygame.draw.line(screen, ROBOT_COLOR, self._pos, self._pos + heading_vec, 3)
+        pygame.draw.line(screen, ROBOT_COLOR, self._pos, self._pos + heading_vec*2, 3)
 
 
 def rotate_vector(vec, angle):
