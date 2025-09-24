@@ -218,13 +218,7 @@ class Robot:
 
             DO NOT modify robot._linear_velocity or robot._angular_velocity directly. DO NOT modify move()
             """
-        avoid_wall = self.avoid_wall()
-        if not avoid_wall:
-            if dispersion:
-                avoid_robots = self.disperse()
-
-            else:
-                self.flocking()
+        pass
             
 
     def draw(self, screen):
@@ -270,56 +264,6 @@ class Robot:
         heading_vec = rotate_vector(np.array([self._radius + 2, 0]), self._heading)
         pygame.draw.line(screen, ROBOT_COLOR, self._pos, self._pos + heading_vec, 3)
 
-    def avoid(self, angle_readings):
-        average_angle = sum(angle_readings) / len(angle_readings)
-        if average_angle >= 0: # If wall is to the left or infront
-            opposite_angle = average_angle - math.pi
-        else:  # If wall is to the right
-            opposite_angle = average_angle + math.pi
-        
-        # Add randomness
-        random_angle_diff = uniform(math.pi * 0.1,math.pi * -0.1)
-        target_angle = opposite_angle + random_angle_diff
-
-        if self.verbose:
-            print(f"Avoiding! Turning {target_angle}")
-        self.set_rotation_and_speed(target_angle, MAX_SPEED)
-
-    def calc_repulsion_distance(self):
-        return RAB_RANGE * (1 - (self.light_intensity/2))
-
-    def disperse(self):
-        robot_angles = ([r['bearing'] for r in self.rab_signals if r["distance"] <= self.calc_repulsion_distance()]) # Distances seem to be around 70 - 150 and light_intensity goes from 0 to 1 it seems.
-        should_disperse = len(robot_angles) > 0
-
-        if should_disperse:
-            self.avoid(robot_angles)
-
-        else:
-            if self.verbose:
-                print("Nothing is wrong:) Stopping and chilling.")
-            self.set_rotation_and_speed(0, 0)        
-
-        return should_disperse
-
-    def avoid_wall(self):
-        wall_reading_angles = []
-
-        for i, angle in enumerate(self.prox_angles):
-            if self.prox_readings[i]["type"] == "wall":
-                if angle > math.pi:
-                    wall_reading_angles.append(angle - 2 * math.pi)
-                else:
-                    wall_reading_angles.append(angle)
-        
-        # See if we register any wall not behind us
-        filered_list = [r for r in wall_reading_angles if r != self.prox_angles[2] and r != (self.prox_angles[3] - 2 * math.pi)]
-        should_activate = len(filered_list) > 0
-
-        if should_activate:
-            self.avoid(wall_reading_angles)
-
-        return should_activate
 
 def rotate_vector(vec, angle):
     c, s = np.cos(angle), np.sin(angle)
