@@ -50,5 +50,5 @@ def compute_metrics(robots : list[Robot]): # pass as many arguments as you need 
                 # If distance from the center of the robot is greater than the radius, then we know that this pixel is outside the bounding box of the robot's body.
                 distance_from_robot_center = np.sqrt((x - robot_x)^2 + (y - robot_y)^2)
                 if distance_from_robot_center <= ROBOT_RADIUS:
-                    if x >= 0 and x < len(pixel_map[y]) and y >= 0 and y < len(pixel_map):
+                    if y >= 0 and y < len(pixel_map) and x >= 0 and x < len(pixel_map[y]):
                         pixel_map[y][x] = pixel_map[y][x] + 1
