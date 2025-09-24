@@ -8,7 +8,7 @@ from light_source import _get_light_intensity
 from readings import Reading, Signal, Message, Objects
 
 # Parameters
-NUM_ROBOTS = 3
+NUM_ROBOTS = 4
 ROBOT_RADIUS = 10
 
 NUM_PROX_SENSORS = 6
@@ -16,6 +16,7 @@ NUM_RAB_SENSORS = 12
 
 PROX_SENSOR_RANGE = 60  # pixels
 RAB_RANGE = 150  # pixels
+CLOSE_RANGE_RADIUS = RAB_RANGE / 3
 
 MAX_SPEED = 50
 MAX_TURN = 3  # radians/sec - a real robot like the e-puck or TurtleBot typically turns at 90–180 deg/sec (≈ 1.5–3.1 rad/sec)
@@ -49,10 +50,7 @@ class Robot:
         #### Sensor readings
         # proximity sensors
         self.prox_angles = np.pi / NUM_PROX_SENSORS + np.linspace(0, 2 * np.pi, NUM_PROX_SENSORS, endpoint=False)
-        self.prox_readings = [
-            {"distance": PROX_SENSOR_RANGE, "type": None}
-            for _ in range(NUM_PROX_SENSORS)
-        ]
+        self.prox_readings = [Reading(PROX_SENSOR_RANGE, None) for _ in range(NUM_PROX_SENSORS)] # type: ignore
         # RAB sensor
         self.rab_angles = np.pi / NUM_RAB_SENSORS + np.linspace(0, 2 * np.pi, NUM_RAB_SENSORS, endpoint=False)
         self.rab_signals: list[Signal] = []
@@ -106,7 +104,7 @@ class Robot:
 
         # Empty the sensors
         self.prox_readings : list[Reading] = [
-            Reading(PROX_SENSOR_RANGE, None) for _ in range(NUM_PROX_SENSORS)
+            Reading(PROX_SENSOR_RANGE, None) for _ in range(NUM_PROX_SENSORS) # type: ignore
         ]
         self.rab_signals : list[Signal] = []
 
@@ -159,7 +157,7 @@ class Robot:
             if distance <= PROX_SENSOR_RANGE:
                 bearing = (np.arctan2(rel_vec[1], rel_vec[0]) - self._heading) % (2 * np.pi)
                 prox_idx = int((bearing / (2 * np.pi)) * NUM_PROX_SENSORS)
-                if distance < self.prox_readings[prox_idx]["distance"]:
+                if distance < self.prox_readings[prox_idx].distance:
                     self.prox_readings[prox_idx] = Reading(distance, Objects.Obstacle)
 
         # Wall sensing (raycast style)
@@ -223,7 +221,7 @@ class Robot:
         pass
             
 
-    def draw(self, screen):
+    def draw(self, screen : pygame.surface.Surface, font : pygame.font.Font):
         # --- IR proximity sensors ---
         for i, reading in enumerate(self.prox_readings):
             dist = reading.distance
@@ -265,6 +263,18 @@ class Robot:
         # --- Heading indicator ---
         heading_vec = rotate_vector(np.array([self._radius + 2, 0]), self._heading)
         pygame.draw.line(screen, ROBOT_COLOR, self._pos, self._pos + heading_vec*2, 3)
+
+        # --- Text ---
+        text_surface = font.render(str(self.id), False, (0, 0, 0))
+        text_width = text_surface.get_rect().width
+        screen.blit(text_surface, self._pos - (text_width/2, 6))
+
+
+        # RAB Ranges:
+        outer_color = (0, 151, 0) # Green
+        inner_color = (177, 0, 0)  # Red
+        pygame.draw.circle(screen, outer_color, self._pos.astype(int), RAB_RANGE, 2)
+        pygame.draw.circle(screen, inner_color, self._pos.astype(int), CLOSE_RANGE_RADIUS, 2)
 
 
 def rotate_vector(vec, angle):

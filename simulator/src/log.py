@@ -52,3 +52,18 @@ def compute_metrics(robots : list[Robot]): # pass as many arguments as you need 
                 if distance_from_robot_center <= ROBOT_RADIUS:
                     if y >= 0 and y < len(pixel_map) and x >= 0 and x < len(pixel_map[y]):
                         pixel_map[y][x] = pixel_map[y][x] + 1
+                        
+
+def log_decorator(func):
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+        # You can add logging functionality here if needed
+        print(f"{func.__name__}({args}, {kwargs}) -> {result}")
+        return result
+    return wrapper
+
+def log_calculation(func, args: list, result, *, doprint = False):
+    s = f"{func.__name__}({', '.join(map(str, args))}) -> {result}"
+    if doprint:
+        print(s)
+    return s

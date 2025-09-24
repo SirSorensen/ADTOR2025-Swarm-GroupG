@@ -103,8 +103,9 @@ def main(_seed = 42):
             draw_light_sources(screen)
             draw_obstacles(screen)
             for robot in robots:
-                robot.draw(screen)
-                robot.draw_vectors(screen)
+                robot.draw(screen, font)
+                if isinstance(robot, Boid):
+                    robot.draw_vectors(screen)
             if paused:
                 txt = font.render("PAUSED", True, (255, 100, 100))
                 screen.blit(txt, (10, 30))

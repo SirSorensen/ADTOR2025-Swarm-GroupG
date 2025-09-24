@@ -4,10 +4,11 @@ import numpy as np
 from robot import Robot, MAX_SPEED, RAB_RANGE, rotate_vector
 from readings import Signal, Objects
 import pygame
+from log import log_calculation, log_decorator
 
-ALIGN_COEFFICIENT = 10
-SEPARATION_COEFFICIENT = 3
-COHESION_COEFFICIENT = 0.1
+ALIGN_COEFFICIENT = 0
+SEPARATION_COEFFICIENT = 0
+COHESION_COEFFICIENT = 10
 
 CLOSE_RANGE_RADIUS = RAB_RANGE / 3
 
@@ -18,6 +19,10 @@ class Boid(Robot):
         pos: np.ndarray[tuple[int, ...], np.dtype[np.float64]],
         heading: float,
     ):
+        self.align_vector = np.ndarray([0,0])
+        self.separation_vector = np.ndarray([0,0])
+        self.cohesion_vector = np.ndarray([0,0])
+        self.target_vector = np.ndarray([0,0])
         super().__init__(id, pos, heading)
         
 
@@ -33,30 +38,38 @@ class Boid(Robot):
 
         DO NOT modify robot._linear_velocity or robot._angular_velocity directly. DO NOT modify move()
         """
-        avoid_wall = self.avoid_wall()
-        if not avoid_wall:
-            if dispersion:
-                self.disperse()
-            else:
-                self.flocking()
+        # avoid_wall = self.avoid_wall()
+        # if not avoid_wall:
+        if dispersion:
+            self.disperse()
+        else:
+            self.flocking()
 
     def flocking(self):
-        align_vector = self.calc_align_vector()
-        separation_vector = self.calc_separation_vector()
-        cohesion_vector = self.calc_cohesion_vector()
+        target_vector = self._get_target_vector()
 
-        total_vector = (
-            align_vector * ALIGN_COEFFICIENT
-            + separation_vector * SEPARATION_COEFFICIENT
-            + cohesion_vector * COHESION_COEFFICIENT
-        )
-
-        delta_bearing = np.arctan2(total_vector[0], total_vector[1])
-        if self.verbose:
-            print(f"Aligning with other robots! Turning {delta_bearing}")
+        delta_bearing = np.arctan2(target_vector[1], target_vector[0])
+        print(f"{self.id = }", end =" ")
+        log_calculation(np.arctan2, [target_vector], delta_bearing)
         self.set_rotation_and_speed(delta_bearing, MAX_SPEED)
 
         return True
+    
+    def _get_target_vector(self):
+        self.align_vector = self.calc_align_vector() * ALIGN_COEFFICIENT
+        self.separation_vector = self.calc_separation_vector() * SEPARATION_COEFFICIENT
+        self.cohesion_vector = self.calc_cohesion_vector() * COHESION_COEFFICIENT
+
+        self.target_vector = (self.align_vector + self.separation_vector + self.cohesion_vector)
+
+        print(f"\nRobot[{str(self.id)}]: \n \
+              \t target_vector = {np.round(self.target_vector, 2)} \n \
+              \t \t separation_vector = {np.round(self.separation_vector, 2)} \n \
+              \t \t separation_vector = {np.round(self.separation_vector, 2)} \n \
+              \t \t cohesion_vector = {np.round(self.cohesion_vector, 2)}")
+
+        return self.target_vector
+
 
     def get_close_boids(self) -> list[Signal]:
         boids : list[Signal] = self.rab_signals
@@ -82,19 +95,27 @@ class Boid(Robot):
         sep_boids = self.get_close_boids()
         if len(sep_boids) == 0:
             return np.array([0,0])
-        bearings = [sb.bearing for sb in sep_boids]
-        average_bearing = calc_average_radian(bearings)
-        opposite_angle = calc_opposite_angle(average_bearing)
-        separation_vector = np.array([np.cos(opposite_angle), np.sin(opposite_angle)])
-        return separation_vector
+        avg_bearing = self.get_average_bearing(sep_boids)
+        separation_vector = avg_bearing * -1
+        return np.array(separation_vector)
     
     def calc_cohesion_vector(self):
         coh_boids = self.get_far_boids()
         if len(coh_boids) == 0:
             return np.array([0,0])
-        vectors_to_other_boids = [np.array([np.cos(boid.bearing)*boid.distance, np.sin(boid.bearing)*boid.distance]) for boid in coh_boids]
-        cohesion_vector = np.mean(vectors_to_other_boids, axis=0)
-        return cohesion_vector
+
+        print(f"\nRobot[{str(self.id)}]: \n \
+              \t boids_in_range = {[f"sensor_idx={sb.sensor_idx}, bearing={sb.bearing}, distance={sb.distance}, Message:(heading={sb.message.heading}, comm_signal={sb.message.comm_signal})" for sb in coh_boids]}")
+        avg_bearing = self.get_average_bearing(coh_boids) # cohesion vector
+        return avg_bearing
+
+    def get_average_bearing(self, boids_in_range: list[Signal]):
+        bearings = np.array([(np.cos(sb.bearing), np.sin(sb.bearing)) for sb in boids_in_range])
+        average_bearing = np.mean(bearings, axis=0)
+        return average_bearing
+
+
+        
 
 
 
@@ -168,28 +189,14 @@ class Boid(Robot):
         return boids
 
     def draw_vector(self, screen, color, vector):
-        print(f"draw_vector(screen, {color}, {vector}) -> ({self._pos}, {self._pos + vector * 5})")
+        # print(f"draw_vector(screen, {color}, {vector}) -> ({self._pos}, {self._pos + vector * 5})")
         pygame.draw.line(screen, color, self._pos, self._pos + vector * 5, 2)
-    
+
     def draw_vectors(self, screen):
-        align_vector = self.calc_align_vector() * ALIGN_COEFFICIENT
-        align_vector = rotate_vector(np.array([self._radius + 2, 0]), align_vector)
-        self.draw_vector(screen, pygame.Color(255, 70, 255), align_vector) # Magenta
-
-        separation_vector = self.calc_separation_vector() * SEPARATION_COEFFICIENT
-        separation_vector = rotate_vector(np.array([self._radius + 2, 0]), separation_vector)
-        self.draw_vector(screen, pygame.Color(255, 69, 69), separation_vector) # Red
-
-        cohesion_vector = self.calc_cohesion_vector() * COHESION_COEFFICIENT
-        cohesion_vector = rotate_vector(np.array([self._radius + 2, 0]), cohesion_vector)
-        self.draw_vector(screen, pygame.Color(70, 255, 255), cohesion_vector) # Cyan
-
-        total_vector = (
-            align_vector
-            + separation_vector
-            + cohesion_vector
-        )
-        self.draw_vector(screen, pygame.Color(255, 255, 70), total_vector) # Yellow
+        self.draw_vector(screen, pygame.Color(255, 70, 255), self.align_vector) # Magenta
+        self.draw_vector(screen, pygame.Color(255, 69, 69), self.separation_vector) # Red
+        self.draw_vector(screen, pygame.Color(70, 255, 255), self.cohesion_vector) # Cyan
+        self.draw_vector(screen, pygame.Color(255, 255, 70), self.target_vector) # Yellow
 
 
 
@@ -199,17 +206,17 @@ def calc_average_radian(radian_list):
         vector_list.append([np.cos(angle), np.sin(angle)])
 
     average_vector = np.mean(vector_list, axis=0)
-    average_angle = np.arctan2(average_vector[0], average_vector[1])
+    average_angle = np.arctan2(average_vector[1], average_vector[0])
 
 
-    print(f"calc_average_radian({radian_list}) -> {average_vector} -> {average_angle}")
+    # print(f"calc_average_radian({radian_list}) -> {average_vector} -> {average_angle}")
     
     return average_angle
 
 def calc_opposite_angle(angle):
     if angle >= 0:
-        print(f"calc_opposite_angle({angle}) -> {angle - math.pi}")
+        # print(f"calc_opposite_angle({angle}) -> {angle - math.pi}")
         return angle - math.pi
     else:
-        print(f"calc_opposite_angle({angle}) -> {angle + math.pi}")
+        # print(f"calc_opposite_angle({angle}) -> {angle + math.pi}")
         return angle + math.pi
