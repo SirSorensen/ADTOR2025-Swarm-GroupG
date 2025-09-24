@@ -297,8 +297,11 @@ class Robot:
             print(f"Avoiding! Turning {target_angle}")
         self.set_rotation_and_speed(target_angle, MAX_SPEED)
 
+    def calc_repulsion_distance(self):
+        return RAB_RANGE * (1 - (self.light_intensity/2))
+
     def disperse(self):
-        robot_angles = ([r['bearing'] for r in self.rab_signals if r["distance"] > self.light_intensity*100]) # Distances seem to be around 70 - 150 and light_intensity goes from 0 to 1 it seems.
+        robot_angles = ([r['bearing'] for r in self.rab_signals if r["distance"] <= self.calc_repulsion_distance()]) # Distances seem to be around 70 - 150 and light_intensity goes from 0 to 1 it seems.
         should_disperse = len(robot_angles) > 0
 
         if should_disperse:
