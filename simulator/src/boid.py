@@ -45,79 +45,8 @@ class Boid(Robot):
         else:
             self.flocking()
 
-    def flocking(self):
-        target_vector = self._get_target_vector()
 
-        delta_bearing = np.arctan2(target_vector[1], target_vector[0])
-        print(f"{self.id = }", end =" ")
-        log_calculation(np.arctan2, [target_vector], delta_bearing)
-        self.set_rotation_and_speed(delta_bearing, MAX_SPEED)
-
-        return True
-    
-    def _get_target_vector(self):
-        self.align_vector = self.calc_align_vector() * ALIGN_COEFFICIENT
-        self.separation_vector = self.calc_separation_vector() * SEPARATION_COEFFICIENT
-        self.cohesion_vector = self.calc_cohesion_vector() * COHESION_COEFFICIENT
-
-        self.target_vector = (self.align_vector + self.separation_vector + self.cohesion_vector)
-
-        print(f"\nRobot[{str(self.id)}]: \n \
-              \t target_vector = {np.round(self.target_vector, 2)} \n \
-              \t \t separation_vector = {np.round(self.separation_vector, 2)} \n \
-              \t \t separation_vector = {np.round(self.separation_vector, 2)} \n \
-              \t \t cohesion_vector = {np.round(self.cohesion_vector, 2)}")
-
-        return self.target_vector
-
-
-    def get_close_boids(self) -> list[Signal]:
-        boids : list[Signal] = self.rab_signals
-        close_boids = [boid for boid in boids if boid.distance < CLOSE_RANGE_RADIUS]
-        return close_boids
-    
-    def get_far_boids(self) -> list[Signal]:
-        boids : list[Signal] = self.rab_signals
-        far_boids = [boid for boid in boids if boid.distance >= CLOSE_RANGE_RADIUS]
-        return far_boids
-    
-    def calc_align_vector(self):
-        align_boids = self.get_far_boids()
-        if len(align_boids) == 0:
-            return np.array([0,0])
-
-        align_boids_headings = [r.message.heading for r in align_boids]
-        average_heading = calc_average_radian(align_boids_headings)
-        align_vector = np.array([np.cos(average_heading), np.sin(average_heading)])
-        return align_vector
-    
-    def calc_separation_vector(self):
-        sep_boids = self.get_close_boids()
-        if len(sep_boids) == 0:
-            return np.array([0,0])
-        avg_bearing = self.get_average_bearing(sep_boids)
-        separation_vector = avg_bearing * -1
-        return np.array(separation_vector)
-    
-    def calc_cohesion_vector(self):
-        coh_boids = self.get_far_boids()
-        if len(coh_boids) == 0:
-            return np.array([0,0])
-
-        print(f"\nRobot[{str(self.id)}]: \n \
-              \t boids_in_range = {[f"sensor_idx={sb.sensor_idx}, bearing={sb.bearing}, distance={sb.distance}, Message:(heading={sb.message.heading}, comm_signal={sb.message.comm_signal})" for sb in coh_boids]}")
-        avg_bearing = self.get_average_bearing(coh_boids) # cohesion vector
-        return avg_bearing
-
-    def get_average_bearing(self, boids_in_range: list[Signal]):
-        bearings = np.array([(np.cos(sb.bearing), np.sin(sb.bearing)) for sb in boids_in_range])
-        average_bearing = np.mean(bearings, axis=0)
-        return average_bearing
-
-
-        
-
-
+    ###################### Higher Methods ######################
 
     def avoid(self, angle_readings):
         average_angle = sum(angle_readings) / len(angle_readings)
@@ -134,8 +63,64 @@ class Boid(Robot):
             print(f"Avoiding! Turning {target_angle}")
         self.set_rotation_and_speed(target_angle, MAX_SPEED)
 
-    def calc_repulsion_distance(self):
-        return RAB_RANGE * (1 - (self.light_intensity/2))
+    def get_average_bearing(self, boids_in_range: list[Signal]):
+        bearings = np.array([(np.cos(sb.bearing), np.sin(sb.bearing)) for sb in boids_in_range])
+        average_bearing = np.mean(bearings, axis=0)
+        return average_bearing
+
+    ###################### Flocking ######################
+    def flocking(self):
+        self._calc_target_vector()
+        delta_bearing = np.arctan2(self.target_vector[1], self.target_vector[0])
+        print(f"{self.id = }", end =" ")
+        log_calculation(np.arctan2, [self.target_vector], delta_bearing)
+        self.set_rotation_and_speed(delta_bearing, MAX_SPEED)
+    
+    def _calc_target_vector(self):
+        self.align_vector = self.calc_align_vector() * ALIGN_COEFFICIENT
+        self.separation_vector = self.calc_separation_vector() * SEPARATION_COEFFICIENT
+        self.cohesion_vector = self.calc_cohesion_vector() * COHESION_COEFFICIENT
+
+        self.target_vector = (self.align_vector + self.separation_vector + self.cohesion_vector)
+
+        print(f"\nRobot[{str(self.id)}]: \n \
+              \t target_vector = {np.round(self.target_vector, 2)} \n \
+              \t \t separation_vector = {np.round(self.separation_vector, 2)} \n \
+              \t \t separation_vector = {np.round(self.separation_vector, 2)} \n \
+              \t \t cohesion_vector = {np.round(self.cohesion_vector, 2)}")
+    
+    ########### Aligning ###########
+    def calc_align_vector(self):
+        align_boids = self.get_far_boids()
+        if len(align_boids) == 0:
+            return np.array([0,0])
+
+        align_boids_headings = [r.message.heading for r in align_boids]
+        average_heading = calc_average_radian(align_boids_headings)
+        align_vector = np.array([np.cos(average_heading), np.sin(average_heading)])
+        return align_vector
+    
+    ########### Separation ###########
+    def calc_separation_vector(self):
+        sep_boids = self.get_close_boids()
+        if len(sep_boids) == 0:
+            return np.array([0,0])
+        avg_bearing = self.get_average_bearing(sep_boids)
+        separation_vector = avg_bearing * -1
+        return np.array(separation_vector)
+    
+    ########### Cohesion ###########
+    def calc_cohesion_vector(self):
+        coh_boids = self.get_far_boids()
+        if len(coh_boids) == 0:
+            return np.array([0,0])
+
+        print(f"\nRobot[{str(self.id)}]: \n \
+              \t boids_in_range = {[f"sensor_idx={sb.sensor_idx}, bearing={sb.bearing}, distance={sb.distance}, Message:(heading={sb.message.heading}, comm_signal={sb.message.comm_signal})" for sb in coh_boids]}")
+        avg_bearing = self.get_average_bearing(coh_boids) # cohesion vector
+        return avg_bearing
+
+    ###################### Disperse ######################
 
     def disperse(self):
         robot_angles = [
@@ -153,15 +138,13 @@ class Boid(Robot):
 
         return should_disperse
 
-    def avoid_wall(self):
-        wall_reading_angles = []
+    def calc_repulsion_distance(self):
+        return RAB_RANGE * (1 - (self.light_intensity/2))
 
-        for i, angle in enumerate(self.prox_angles):
-            if self.prox_readings[i].reading_type == Objects.Wall:
-                if angle > math.pi:
-                    wall_reading_angles.append(angle - 2 * math.pi)
-                else:
-                    wall_reading_angles.append(angle)
+    ###################### Wall Avoidance ######################
+
+    def avoid_wall(self):
+        wall_reading_angles = self.get_obj_angles(Objects.Wall)
 
         # See if we register any wall not behind us
         filered_list = [r for r in wall_reading_angles if r != self.prox_angles[2] and r != (self.prox_angles[3] - 2 * math.pi)]
@@ -171,25 +154,38 @@ class Boid(Robot):
             self.avoid(wall_reading_angles)
 
         return should_activate
+    
 
-    def _get_boids(self) -> list[dict[str, float]]:
-        boids = []
-        for sig in self.rab_signals:
-            sig_angle = self._heading + self.rab_angles[sig.sensor_idx]
-            relative_dir = np.array([np.sin(sig_angle), np.cos(sig_angle)])  # radians
+    ###################### RAB Signals ######################
 
-            boids.append(
-                {
-                    "distance": sig.distance,
-                    "angle": relative_dir,
-                    "heading": sig.message.heading,
-                }
-            )
+    def get_obj_angles(self, obj : Objects):
+        result = []
+        for i, angle in enumerate(self.prox_angles):
+            if self.prox_readings[i].reading_type == obj:
+                if angle > math.pi:
+                    result.append(angle - 2 * math.pi)
+                else:
+                    result.append(angle)
+        return result
+                
 
-        return boids
+    
+    ###################### RAB Signals ######################
+
+    def get_close_boids(self) -> list[Signal]:
+        boids : list[Signal] = self.rab_signals
+        close_boids = [boid for boid in boids if boid.distance < CLOSE_RANGE_RADIUS]
+        return close_boids
+    
+    def get_far_boids(self) -> list[Signal]:
+        boids : list[Signal] = self.rab_signals
+        far_boids = [boid for boid in boids if boid.distance >= CLOSE_RANGE_RADIUS]
+        return far_boids
+
+
+    ###################### Draw ######################
 
     def draw_vector(self, screen, color, vector):
-        # print(f"draw_vector(screen, {color}, {vector}) -> ({self._pos}, {self._pos + vector * 5})")
         pygame.draw.line(screen, color, self._pos, self._pos + vector * 5, 2)
 
     def draw_vectors(self, screen):
@@ -207,9 +203,6 @@ def calc_average_radian(radian_list):
 
     average_vector = np.mean(vector_list, axis=0)
     average_angle = np.arctan2(average_vector[1], average_vector[0])
-
-
-    # print(f"calc_average_radian({radian_list}) -> {average_vector} -> {average_angle}")
     
     return average_angle
 
