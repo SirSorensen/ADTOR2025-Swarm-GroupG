@@ -74,6 +74,9 @@ def main(_seed = 42):
                     verbose = not verbose
                     for r in robots:
                         r.verbose = verbose
+                elif event.key == pygame.K_e:
+                    running = False
+                
 
 
         if not paused:
