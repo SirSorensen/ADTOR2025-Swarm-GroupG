@@ -221,7 +221,7 @@ class Robot:
         pass
             
 
-    def draw(self, screen):
+    def draw(self, screen : pygame.surface.Surface, font : pygame.font.Font):
         # --- IR proximity sensors ---
         for i, reading in enumerate(self.prox_readings):
             dist = reading.distance
@@ -263,6 +263,11 @@ class Robot:
         # --- Heading indicator ---
         heading_vec = rotate_vector(np.array([self._radius + 2, 0]), self._heading)
         pygame.draw.line(screen, ROBOT_COLOR, self._pos, self._pos + heading_vec, 3)
+
+        # --- Text ---
+        text_surface = font.render(str(self.id), False, (0, 0, 0))
+        text_width = text_surface.get_rect().width
+        screen.blit(text_surface, self._pos - (text_width/2, 6))
 
 
 def rotate_vector(vec, angle):
