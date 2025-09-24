@@ -1,16 +1,14 @@
 import math
 from random import uniform
 import numpy as np
-from robot import Robot, MAX_SPEED, RAB_RANGE, rotate_vector
+from robot import Robot, MAX_SPEED, RAB_RANGE, rotate_vector, CLOSE_RANGE_RADIUS
 from readings import Signal, Objects
 import pygame
-from log import log_calculation, log_decorator
+from log import log_calculation
 
-ALIGN_COEFFICIENT = 0
-SEPARATION_COEFFICIENT = 0
+ALIGN_COEFFICIENT = 10
+SEPARATION_COEFFICIENT = 10
 COHESION_COEFFICIENT = 10
-
-CLOSE_RANGE_RADIUS = RAB_RANGE / 3
 
 class Boid(Robot):
     def __init__(
@@ -60,11 +58,6 @@ class Boid(Robot):
             print(f"Avoiding! Turning {target_angle}")
         self.set_rotation_and_speed(target_angle, MAX_SPEED)
 
-    def get_average_bearing(self, boids_in_range: list[Signal]):
-        bearings = np.array([(np.cos(sb.bearing), np.sin(sb.bearing)) for sb in boids_in_range])
-        average_bearing = np.mean(bearings, axis=0)
-        return average_bearing
-
     ###################### Flocking ######################
 
     def flocking(self):
@@ -94,7 +87,8 @@ class Boid(Robot):
             return np.array([0,0])
 
         align_boids_headings = [r.message.heading for r in align_boids]
-        average_heading = calc_average_radian(align_boids_headings)
+        average_heading = np.mean(align_boids_headings)
+        average_heading = transform_angle(average_heading)
         align_vector = np.array([np.cos(average_heading), np.sin(average_heading)])
         return align_vector
     
@@ -103,9 +97,12 @@ class Boid(Robot):
         sep_boids = self.get_close_boids()
         if len(sep_boids) == 0:
             return np.array([0,0])
-        avg_bearing = self.get_average_bearing(sep_boids)
-        separation_vector = avg_bearing * -1
-        return np.array(separation_vector)
+        bearings = [r.bearing for r in sep_boids]
+        avg_bearing = np.mean(bearings)
+        avg_bearing = transform_angle(avg_bearing)
+        separation_vector = np.array([np.cos(avg_bearing), np.sin(avg_bearing)])
+        separation_vector = separation_vector * -1
+        return separation_vector
     
     ########### Cohesion ###########
     def calc_cohesion_vector(self):
@@ -113,8 +110,11 @@ class Boid(Robot):
         if len(coh_boids) == 0:
             return np.array([0,0])
 
-        avg_bearing = self.get_average_bearing(coh_boids) # cohesion vector
-        return avg_bearing
+        bearings = [r.bearing for r in coh_boids]
+        avg_bearing = np.mean(bearings)
+        avg_bearing = transform_angle(avg_bearing)
+        cohesion_vector = np.array([np.cos(avg_bearing), np.sin(avg_bearing)])
+        return cohesion_vector
 
     ###################### Disperse ######################
 
@@ -181,13 +181,13 @@ class Boid(Robot):
 
     ###################### Draw ######################
 
-    def draw_vector(self, screen, color, vector):
-        pygame.draw.line(screen, color, self._pos, self._pos + vector * 5, 2)
+    def draw_vector(self, screen, color, vector, _width=2):
+        pygame.draw.line(screen, color, self._pos, self._pos + vector * 5, _width)
 
     def draw_vectors(self, screen):
-        self.draw_vector(screen, pygame.Color(255, 70, 255), rotate_vector(self.align_vector, self._heading)) # Magenta
-        self.draw_vector(screen, pygame.Color(255, 69, 69), rotate_vector(self.separation_vector, self._heading)) # Red
-        self.draw_vector(screen, pygame.Color(70, 255, 255), rotate_vector(self.cohesion_vector, self._heading)) # Cyan
+        self.draw_vector(screen, pygame.Color(255, 70, 255), self.align_vector, 4) # Magenta
+        self.draw_vector(screen, pygame.Color(255, 69, 69), rotate_vector(self.separation_vector, self._heading), 4) # Red
+        self.draw_vector(screen, pygame.Color(70, 255, 255), rotate_vector(self.cohesion_vector, self._heading), 4) # Cyan
         self.draw_vector(screen, pygame.Color(255, 255, 70), rotate_vector(self.target_vector, self._heading)) # Yellow
 
 
@@ -207,3 +207,11 @@ def calc_opposite_angle(angle):
         return angle - math.pi
     else:
         return angle + math.pi
+
+def transform_angle(angle):
+    while np.abs(angle) > np.pi:
+        if angle > 0:
+            angle -= 2*np.pi
+        else:
+            angle += 2*np.pi
+    return angle

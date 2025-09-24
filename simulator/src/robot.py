@@ -8,7 +8,7 @@ from light_source import _get_light_intensity
 from readings import Reading, Signal, Message, Objects
 
 # Parameters
-NUM_ROBOTS = 4
+NUM_ROBOTS = 30
 ROBOT_RADIUS = 10
 
 NUM_PROX_SENSORS = 6
@@ -31,6 +31,8 @@ HEADING_NOISE_STD = 0 # Try 0.01 # Rotational noise in heading (radians)
 RAB_NOISE_BEARING = 0 # std dev of directional noise to bearing in RAB:  0.1 rad. = ~5.7 degree in the bearing
 RAB_DROPOUT = 0  # chance to drop a signal
 ORIENTATION_NOISE_STD = 0 # noise in IMU readings of the robot’s own orientation
+
+DEBUG_DRAWING = False
 
 class Robot:
     def __init__(self, id : int, pos : np.ndarray[tuple[int, ...], np.dtype[np.float64]], heading : float):
@@ -241,8 +243,9 @@ class Robot:
             else:
                 color = (20, 80, 20)  # Green (no hit)
 
-            #pygame.draw.line(screen, color, self._pos, end_pos, 2)
-            #pygame.draw.circle(screen, color, end_pos.astype(int), 3)
+            if not DEBUG_DRAWING:
+                pygame.draw.line(screen, color, self._pos, end_pos, 2)
+                pygame.draw.circle(screen, color, end_pos.astype(int), 3)
 
         # --- RAB signals ---
         for sig in self.rab_signals:
@@ -255,7 +258,8 @@ class Robot:
             intensity_color = 55 + int(200 * (sig.intensity * 2 - 1))
             color = (intensity_color, 50, intensity_color)
 
-            #pygame.draw.line(screen, color, start, end, 2)
+            if not DEBUG_DRAWING:
+                pygame.draw.line(screen, color, start, end, 2)
 
         # --- Robot body ---
         pygame.draw.circle(screen, ROBOT_COLOR, self._pos.astype(int), self._radius)
@@ -271,10 +275,11 @@ class Robot:
 
 
         # RAB Ranges:
-        outer_color = (0, 151, 0) # Green
-        inner_color = (177, 0, 0)  # Red
-        pygame.draw.circle(screen, outer_color, self._pos.astype(int), RAB_RANGE, 2)
-        pygame.draw.circle(screen, inner_color, self._pos.astype(int), CLOSE_RANGE_RADIUS, 2)
+        if DEBUG_DRAWING:
+            outer_color = (0, 151, 0) # Green
+            inner_color = (177, 0, 0)  # Red
+            pygame.draw.circle(screen, outer_color, self._pos.astype(int), RAB_RANGE, 2)
+            pygame.draw.circle(screen, inner_color, self._pos.astype(int), CLOSE_RANGE_RADIUS, 2)
 
 
 def rotate_vector(vec, angle):

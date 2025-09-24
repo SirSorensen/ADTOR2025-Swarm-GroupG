@@ -5,7 +5,7 @@ from drawer import draw_light_sources, draw_obstacles
 from game import init_pygame
 from log import compute_metrics, log_metrics, logging_close, logging_init
 from obstacle import OBSTACLES
-from robot import NUM_ROBOTS, ROBOT_RADIUS, Robot
+from robot import NUM_ROBOTS, ROBOT_RADIUS, Robot, DEBUG_DRAWING
 from boid import Boid
 
 # Pygame setup
@@ -104,7 +104,7 @@ def main(_seed = 42):
             draw_obstacles(screen)
             for robot in robots:
                 robot.draw(screen, font)
-                if isinstance(robot, Boid):
+                if isinstance(robot, Boid) and DEBUG_DRAWING:
                     robot.draw_vectors(screen)
             if paused:
                 txt = font.render("PAUSED", True, (255, 100, 100))
