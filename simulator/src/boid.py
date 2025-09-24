@@ -51,7 +51,7 @@ class Boid(Robot):
 
     def disperse(self):
         robot_angles = [
-            r.bearing for r in self.rab_signals if r.distance > self.light_intensity * 100
+            r.bearing for r in self.rab_signals if r.distance <= self.calc_repulsion_distance()
         ] # Distances seem to be around 70 - 150 and light_intensity goes from 0 to 1 it seems.
         should_disperse = len(robot_angles) > 0
 
