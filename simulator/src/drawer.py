@@ -8,7 +8,6 @@ def draw_obstacles(screen):
         pygame.draw.circle(screen, (120, 120, 120), obs.pos.astype(int), obs.radius)
 
 def draw_light_sources(screen):
-    return
     for light in LIGHT_SOURCES:
         # Draw fading light circle
         for r in range(light.decay_radius, light.core_radius, -10):

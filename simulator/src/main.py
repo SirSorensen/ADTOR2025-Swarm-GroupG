@@ -17,7 +17,8 @@ OBSTACLE_COLOR = (200, 50, 50)
 FONT_COLOR = (255, 255, 255)
 
 # Simulator
-SIM_DT = 10 / 60.0
+SIM_SPEED = 10
+SIM_DT = SIM_SPEED / 60.0
 
 # Surrounding walls
 ARENA_BOUNDS = {
@@ -28,6 +29,7 @@ ARENA_BOUNDS = {
 }
 
 def main(_seed = 42):
+    global SIM_DT, SIM_SPEED
     clock = pygame.time.Clock()
     dt = SIM_DT
     robots : list[Robot] = []
@@ -62,6 +64,15 @@ def main(_seed = 42):
                 elif event.key == pygame.K_SPACE:
                     visualize = not visualize
                     print("Visualization", "enabled" if visualize else "disabled", "at", total_time)
+                elif event.key == pygame.K_PLUS:
+                    SIM_SPEED = SIM_SPEED + 5
+                    SIM_DT = SIM_SPEED / 60
+                    dt = SIM_DT
+                elif event.key == pygame.K_MINUS:
+                    SIM_SPEED = max(0, SIM_SPEED - 5)
+                    SIM_DT = SIM_SPEED / 60
+                    dt = SIM_DT
+
                 elif event.key == pygame.K_r:
                     # If shift as well, generate a new seed:
                     if event.mod != pygame.KMOD_NONE and (event.mod & pygame.KMOD_LSHIFT or event.mod & pygame.KMOD_RSHIFT):

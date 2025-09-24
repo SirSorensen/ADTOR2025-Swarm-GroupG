@@ -18,7 +18,7 @@ PROX_SENSOR_RANGE = 60  # pixels
 RAB_RANGE = 150  # pixels
 CLOSE_RANGE_RADIUS = RAB_RANGE / 3
 
-MAX_SPEED = 100
+MAX_SPEED = 50
 MAX_TURN = 3  # radians/sec - a real robot like the e-puck or TurtleBot typically turns at 90–180 deg/sec (≈ 1.5–3.1 rad/sec)
 
 ROBOT_COLOR = (200, 255, 255)
@@ -243,7 +243,7 @@ class Robot:
             else:
                 color = (20, 80, 20)  # Green (no hit)
 
-            if not DEBUG_DRAWING:
+            if DEBUG_DRAWING:
                 pygame.draw.line(screen, color, self._pos, end_pos, 2)
                 pygame.draw.circle(screen, color, end_pos.astype(int), 3)
 
@@ -258,7 +258,7 @@ class Robot:
             intensity_color = 55 + int(200 * (sig.intensity * 2 - 1))
             color = (intensity_color, 50, intensity_color)
 
-            if not DEBUG_DRAWING:
+            if DEBUG_DRAWING:
                 pygame.draw.line(screen, color, start, end, 2)
 
         # --- Robot body ---
