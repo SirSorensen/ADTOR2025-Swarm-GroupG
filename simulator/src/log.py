@@ -1,5 +1,5 @@
 
-from robot import Robot, ROBOT_RADIUS
+from robot import Robot, ROBOT_RADIUS, NUM_ROBOTS
 from consts import WIDTH, HEIGHT
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,7 +12,7 @@ def logging_init(): #initialize your log file
 def log_metrics(frame_count, total_time, metrics): # write to your log file
     pass
 
-def logging_close(): # close your log file
+def logging_close(seed): # close your log file
     pixels_undiscovered = 0
     pixels_discovered = 0
     for y in range(len(pixel_map)):
@@ -29,6 +29,8 @@ def logging_close(): # close your log file
     plt.savefig('heatmap.png')
 
     total_pixels = pixels_undiscovered + pixels_discovered
+    print(f"NUM_ROBOTS = {NUM_ROBOTS}")
+    print(f"seed = {seed}")
     print(f"pixels_undiscovered = {pixels_undiscovered}")
     print(f"pixels_discovered = {pixels_discovered}")
     print(f"total_pixels = {total_pixels}")

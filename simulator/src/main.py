@@ -114,7 +114,7 @@ def main(_seed = 42):
 
 
     pygame.quit()
-    logging_close()
+    logging_close(_seed)
 
 if __name__ == "__main__":
     main()
