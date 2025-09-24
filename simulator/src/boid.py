@@ -66,6 +66,7 @@ class Boid(Robot):
         return average_bearing
 
     ###################### Flocking ######################
+
     def flocking(self):
         self._calc_target_vector()
         delta_bearing = np.arctan2(self.target_vector[1], self.target_vector[0])
@@ -112,8 +113,6 @@ class Boid(Robot):
         if len(coh_boids) == 0:
             return np.array([0,0])
 
-        print(f"\nRobot[{str(self.id)}]: \n \
-              \t boids_in_range = {[f"sensor_idx={sb.sensor_idx}, bearing={sb.bearing}, distance={sb.distance}, Message:(heading={sb.message.heading}, comm_signal={sb.message.comm_signal})" for sb in coh_boids]}")
         avg_bearing = self.get_average_bearing(coh_boids) # cohesion vector
         return avg_bearing
 
@@ -186,10 +185,10 @@ class Boid(Robot):
         pygame.draw.line(screen, color, self._pos, self._pos + vector * 5, 2)
 
     def draw_vectors(self, screen):
-        self.draw_vector(screen, pygame.Color(255, 70, 255), self.align_vector) # Magenta
-        self.draw_vector(screen, pygame.Color(255, 69, 69), self.separation_vector) # Red
-        self.draw_vector(screen, pygame.Color(70, 255, 255), self.cohesion_vector) # Cyan
-        self.draw_vector(screen, pygame.Color(255, 255, 70), self.target_vector) # Yellow
+        self.draw_vector(screen, pygame.Color(255, 70, 255), rotate_vector(self.align_vector, self._heading)) # Magenta
+        self.draw_vector(screen, pygame.Color(255, 69, 69), rotate_vector(self.separation_vector, self._heading)) # Red
+        self.draw_vector(screen, pygame.Color(70, 255, 255), rotate_vector(self.cohesion_vector, self._heading)) # Cyan
+        self.draw_vector(screen, pygame.Color(255, 255, 70), rotate_vector(self.target_vector, self._heading)) # Yellow
 
 
 
