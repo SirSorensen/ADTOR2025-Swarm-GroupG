@@ -18,7 +18,7 @@ PROX_SENSOR_RANGE = 60  # pixels
 RAB_RANGE = 150  # pixels
 CLOSE_RANGE_RADIUS = RAB_RANGE / 3
 
-MAX_SPEED = 50
+MAX_SPEED = 100
 MAX_TURN = 3  # radians/sec - a real robot like the e-puck or TurtleBot typically turns at 90–180 deg/sec (≈ 1.5–3.1 rad/sec)
 
 ROBOT_COLOR = (200, 255, 255)

@@ -6,9 +6,9 @@ from readings import Signal, Objects
 import pygame
 from log import log_calculation
 
-ALIGN_COEFFICIENT = 10
-SEPARATION_COEFFICIENT = 10
-COHESION_COEFFICIENT = 10
+ALIGN_COEFFICIENT = 0.6
+SEPARATION_COEFFICIENT = 4
+COHESION_COEFFICIENT = 2
 
 class Boid(Robot):
     def __init__(
@@ -86,7 +86,7 @@ class Boid(Robot):
         if len(align_boids) == 0:
             return np.array([0,0])
 
-        align_boids_headings = [r.message.heading for r in align_boids]
+        align_boids_headings = [r.message.heading * r.distance for r in align_boids]
         average_heading = np.mean(align_boids_headings)
         average_heading = transform_angle(average_heading)
         align_vector = np.array([np.cos(average_heading), np.sin(average_heading)])
