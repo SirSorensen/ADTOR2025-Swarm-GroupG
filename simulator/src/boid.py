@@ -4,11 +4,14 @@ import numpy as np
 from robot import Robot, MAX_SPEED, RAB_RANGE, rotate_vector, CLOSE_RANGE_RADIUS
 from readings import Signal, Objects
 import pygame
-from log import log_calculation
 
-ALIGN_COEFFICIENT = 10
-SEPARATION_COEFFICIENT = 10
-COHESION_COEFFICIENT = 10
+ALIGN_COEFFICIENT = 3
+SEPARATION_COEFFICIENT = 5
+COHESION_COEFFICIENT = 1
+
+WEIGHT_SUM = ALIGN_COEFFICIENT + SEPARATION_COEFFICIENT + COHESION_COEFFICIENT
+VECTOR_THRESHOLD = WEIGHT_SUM/10
+DELTA_THRESHOLD = np.pi / 10
 
 class Boid(Robot):
     def __init__(
@@ -54,18 +57,25 @@ class Boid(Robot):
         random_angle_diff = uniform(math.pi * 0.1,math.pi * -0.1)
         target_angle = opposite_angle + random_angle_diff
 
-        if self.verbose:
-            print(f"Avoiding! Turning {target_angle}")
+        # if self.verbose:
+        #     print(f"Avoiding! Turning {target_angle}")
         self.set_rotation_and_speed(target_angle, MAX_SPEED)
 
     ###################### Flocking ######################
 
     def flocking(self):
         self._calc_target_vector()
+        
+        speed = np.divide(np.linalg.norm(self.target_vector), WEIGHT_SUM) * MAX_SPEED
         delta_bearing = np.arctan2(self.target_vector[1], self.target_vector[0])
-        print(f"{self.id = }", end =" ")
-        log_calculation(np.arctan2, [self.target_vector], delta_bearing)
-        self.set_rotation_and_speed(delta_bearing, MAX_SPEED)
+
+        if np.abs(delta_bearing) < DELTA_THRESHOLD:
+            delta_bearing = 0
+            if np.linalg.norm(self.target_vector) < VECTOR_THRESHOLD:
+                speed = MAX_SPEED / 4
+
+        
+        self.set_rotation_and_speed(delta_bearing, speed)
     
     def _calc_target_vector(self):
         self.align_vector = self.calc_align_vector() * ALIGN_COEFFICIENT
@@ -74,11 +84,13 @@ class Boid(Robot):
 
         self.target_vector = (self.align_vector + self.separation_vector + self.cohesion_vector)
 
-        print(f"\nRobot[{str(self.id)}]: \n \
-              \t target_vector = {np.round(self.target_vector, 2)} \n \
-              \t \t separation_vector = {np.round(self.separation_vector, 2)} \n \
-              \t \t separation_vector = {np.round(self.separation_vector, 2)} \n \
-              \t \t cohesion_vector = {np.round(self.cohesion_vector, 2)}")
+        print(np.linalg.norm(self.target_vector))
+
+        # print(f"\nRobot[{str(self.id)}]: \n \
+        #       \t target_vector = {np.round(self.target_vector, 2)} \n \
+        #       \t \t separation_vector = {np.round(self.separation_vector, 2)} \n \
+        #       \t \t separation_vector = {np.round(self.separation_vector, 2)} \n \
+        #       \t \t cohesion_vector = {np.round(self.cohesion_vector, 2)}")
     
     ########### Aligning ###########
     def calc_align_vector(self):
@@ -128,8 +140,8 @@ class Boid(Robot):
             self.avoid(robot_angles)
 
         else:
-            if self.verbose:
-                print("Nothing is wrong:) Stopping and chilling.")
+            # if self.verbose:
+                # print("Nothing is wrong:) Stopping and chilling.")
             self.set_rotation_and_speed(0, 0)
 
         return should_disperse

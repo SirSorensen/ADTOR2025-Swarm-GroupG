@@ -62,7 +62,7 @@ def log_decorator(func):
         return result
     return wrapper
 
-def log_calculation(func, args: list, result, *, doprint = False):
+def log_calculation(func, args: list, result, *, doprint = True):
     s = f"{func.__name__}({', '.join(map(str, args))}) -> {result}"
     if doprint:
         print(s)

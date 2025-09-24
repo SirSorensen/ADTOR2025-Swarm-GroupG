@@ -17,7 +17,7 @@ OBSTACLE_COLOR = (200, 50, 50)
 FONT_COLOR = (255, 255, 255)
 
 # Simulator
-SIM_DT = 1 / 60.0
+SIM_DT = 2 / 60.0
 
 # Surrounding walls
 ARENA_BOUNDS = {
