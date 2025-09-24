@@ -1,5 +1,3 @@
-import math
-from random import uniform
 import numpy as np
 import pygame
 from pygame.time import Clock
@@ -159,7 +157,7 @@ class Robot:
             if distance <= PROX_SENSOR_RANGE:
                 bearing = (np.arctan2(rel_vec[1], rel_vec[0]) - self._heading) % (2 * np.pi)
                 prox_idx = int((bearing / (2 * np.pi)) * NUM_PROX_SENSORS)
-                if distance < self.prox_readings[prox_idx]["distance"]:
+                if distance < self.prox_readings[prox_idx].distance:
                     self.prox_readings[prox_idx] = Reading(distance, Objects.Obstacle)
 
         # Wall sensing (raycast style)
