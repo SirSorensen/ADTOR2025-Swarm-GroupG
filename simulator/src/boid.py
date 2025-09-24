@@ -19,10 +19,10 @@ class Boid(Robot):
         pos: np.ndarray[tuple[int, ...], np.dtype[np.float64]],
         heading: float,
     ):
-        self.align_vector = np.ndarray([0,0])
-        self.separation_vector = np.ndarray([0,0])
-        self.cohesion_vector = np.ndarray([0,0])
-        self.target_vector = np.ndarray([0,0])
+        self.align_vector = np.array([0,0])
+        self.separation_vector = np.array([0,0])
+        self.cohesion_vector = np.array([0,0])
+        self.target_vector = np.array([0,0])
         super().__init__(id, pos, heading)
         
 
@@ -38,22 +38,19 @@ class Boid(Robot):
 
         DO NOT modify robot._linear_velocity or robot._angular_velocity directly. DO NOT modify move()
         """
-        # avoid_wall = self.avoid_wall()
-        # if not avoid_wall:
-        if dispersion:
-            self.disperse()
-        else:
-            self.flocking()
+        avoid_wall = self.avoid_wall()
+        if not avoid_wall:
+            if dispersion:
+                self.disperse()
+            else:
+                self.flocking()
 
 
     ###################### Higher Methods ######################
 
     def avoid(self, angle_readings):
         average_angle = sum(angle_readings) / len(angle_readings)
-        if average_angle >= 0: # If wall is to the left or infront
-            opposite_angle = average_angle - math.pi
-        else:  # If wall is to the right
-            opposite_angle = average_angle + math.pi
+        opposite_angle = calc_opposite_angle(average_angle)
 
         # Add randomness
         random_angle_diff = uniform(math.pi * 0.1,math.pi * -0.1)
@@ -208,8 +205,6 @@ def calc_average_radian(radian_list):
 
 def calc_opposite_angle(angle):
     if angle >= 0:
-        # print(f"calc_opposite_angle({angle}) -> {angle - math.pi}")
         return angle - math.pi
     else:
-        # print(f"calc_opposite_angle({angle}) -> {angle + math.pi}")
         return angle + math.pi

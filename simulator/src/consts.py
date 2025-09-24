@@ -1,3 +1,3 @@
 
-WIDTH = 80 * 6
-HEIGHT = 60 * 6
+WIDTH = 800
+HEIGHT = 600
