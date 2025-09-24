@@ -270,18 +270,6 @@ class Robot:
         heading_vec = rotate_vector(np.array([self._radius + 2, 0]), self._heading)
         pygame.draw.line(screen, ROBOT_COLOR, self._pos, self._pos + heading_vec, 3)
 
-    def flocking(self):
-        heading_readings = ([r['message']['heading'] for r in self.rab_signals])
-        should_activate = len(heading_readings) > 0
-        if should_activate:
-            average_heading = sum(heading_readings)/len(heading_readings) # Average heading of other robots
-            delta_bearing = self.compute_angle_diff(average_heading)
-            if self.verbose: 
-                print(f"Aligning with other robots! Turning {delta_bearing}")
-            self.set_rotation_and_speed(delta_bearing, MAX_SPEED)
-        
-        return should_activate
-    
     def avoid(self, angle_readings):
         average_angle = sum(angle_readings) / len(angle_readings)
         if average_angle >= 0: # If wall is to the left or infront
