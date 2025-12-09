@@ -1,5 +1,5 @@
 
-from robot import Robot, ROBOT_RADIUS
+from robot import CLOSE_RANGE_RADIUS, Robot, ROBOT_RADIUS
 from consts import WIDTH, HEIGHT
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,7 +10,7 @@ def logging_init(): #initialize your log file
     pass
 
 def log_metrics(frame_count, total_time, metrics): # write to your log file
-    pass
+    print(f"{total_time = }")
 
 def logging_close(): # close your log file
     print("\n\nWow we did it!\n\n" + str(frame_pos_list))
@@ -68,11 +68,12 @@ from sklearn.cluster import DBSCAN
 
 
 def compute_flocking():
+    min_distance = np.sqrt(2*np.pow(CLOSE_RANGE_RADIUS,2))
     for pos_list in frame_pos_list:
         pos_matrix = np.array(pos_list)
         
 
-        db = DBSCAN(eps=150, min_samples=3).fit(pos_matrix)
+        db = DBSCAN(eps=min_distance, min_samples=3).fit(pos_matrix)
         labels = db.labels_
 
         # Number of clusters in labels, ignoring noise if present.
@@ -94,7 +95,7 @@ def compute_flocking():
 
             class_member_mask = labels == k
 
-            xy = pos_list[class_member_mask & core_samples_mask]
+            xy = pos_matrix[class_member_mask & core_samples_mask]
             plt.plot(
                 xy[:, 0],
                 xy[:, 1],
@@ -104,7 +105,7 @@ def compute_flocking():
                 markersize=14,
             )
 
-            xy = pos_list[class_member_mask & ~core_samples_mask]
+            xy = pos_matrix[class_member_mask & ~core_samples_mask]
             plt.plot(
                 xy[:, 0],
                 xy[:, 1],
@@ -114,7 +115,7 @@ def compute_flocking():
                 markersize=6,
             )
 
-        plt.title(f"Estimated number of clusters: {n_clusters_}")
+        plt.title(f"Estimated number of clusters, with min_dist {np.round(min_distance, 2)} = {n_clusters_}")
         plt.savefig('../figs/cluster-plot.png')
         plt.show()
 

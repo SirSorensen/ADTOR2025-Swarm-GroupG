@@ -17,7 +17,7 @@ OBSTACLE_COLOR = (200, 50, 50)
 FONT_COLOR = (255, 255, 255)
 
 # Simulator
-SIM_DT = 2 / 60.0
+SIM_DT = 1 / 60.0
 
 # Surrounding walls
 ARENA_BOUNDS = {
@@ -115,7 +115,8 @@ def main(_seed = 42):
             pygame.display.set_caption("Robot Sim — VISUAL MODE")
         else:
             pygame.display.set_caption("Robot Sim — PAUSED in HEADLESS" if paused else "Robot Sim — HEADLESS")
-
+        if total_time >= 120:
+            running = False
 
     pygame.quit()
     logging_close()
