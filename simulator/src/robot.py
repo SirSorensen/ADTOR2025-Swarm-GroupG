@@ -8,7 +8,7 @@ from light_source import _get_light_intensity
 from readings import Reading, Signal, Message, Objects
 
 # Parameters
-NUM_ROBOTS = 60
+NUM_ROBOTS = 16
 ROBOT_RADIUS = 10
 
 NUM_PROX_SENSORS = 6

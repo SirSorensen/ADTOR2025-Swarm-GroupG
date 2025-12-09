@@ -84,7 +84,7 @@ class Boid(Robot):
 
         self.target_vector = (self.align_vector + self.separation_vector + self.cohesion_vector)
 
-        print(np.linalg.norm(self.target_vector))
+        #print(np.linalg.norm(self.target_vector))
 
         # print(f"\nRobot[{str(self.id)}]: \n \
         #       \t target_vector = {np.round(self.target_vector, 2)} \n \
