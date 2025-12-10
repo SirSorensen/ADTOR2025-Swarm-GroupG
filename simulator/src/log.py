@@ -1,26 +1,37 @@
 
 from datetime import datetime
 import os
-from robot import CLOSE_RANGE_RADIUS, NUM_ROBOTS, RAB_RANGE, Robot, ROBOT_RADIUS
+from robot import CLOSE_RANGE_RADIUS, RAB_RANGE, Robot, ROBOT_RADIUS
 from consts import WIDTH, HEIGHT
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.cluster import DBSCAN
 
-def logging_init(seed): #initialize your log file
-    global frame_pos_list, output_dir
+def logging_init(seed, _num_robs, _output_dir = None): #initialize your log file
+    global frame_pos_list, output_dir, num_robs
     frame_pos_list = np.array([])
-    output_dir = f'../figs/{NUM_ROBOTS} robots + {seed} seed -> {datetime.now().hour}-{datetime.now().minute}'
-    os.mkdir(output_dir)
+    num_robs = _num_robs
+    if _output_dir is None:
+        output_dir = f'/Users/davidmsoerensen/Documents/Uddannelse/Skolebrug/Advanced_Topics_in_Robotics/1-Swarm/exam-paper-related/figs/experiment_round_2/{num_robs} robots + {seed} seed -> {datetime.now().hour}-{datetime.now().minute}'
+    else:
+        output_dir = _output_dir
 
 def log_metrics(frame_count, total_time, metrics): # write to your log file
     print(f"\nCurrent simulation time = {np.round(total_time, 2)}")
 
-def logging_close(): # close your log file
+def logging_close(dispersion : bool): # close your log file
+    global output_dir
+
+    print(f"logging_close({dispersion})!")
+
+    output_dir = f"{output_dir} dispersion" if dispersion else f"{output_dir} flocking"
+    os.mkdir(output_dir)
+
     print("\n\nWow we did it!\n\n")
-    save_log_to_file(str(frame_pos_list), "frame_pos_list.log")
+    frame_pos_list.tofile(f"{output_dir}/frame_pos_list.log", ",")
 
     #compute_heatmap()
-    compute_flocking()
+    #compute_flocking()
 
 
 # Lav et heatmap
@@ -68,6 +79,7 @@ def compute_heatmap():
     a = np.array(pixel_map)
     plt.imshow(a, cmap='hot', interpolation='nearest')
     plt.savefig(f'{output_dir}/heatmap.png')
+    plt.close()
 
     total_pixels = pixels_undiscovered + pixels_discovered
     print(f"pixels_undiscovered = {pixels_undiscovered}")
@@ -76,15 +88,11 @@ def compute_heatmap():
     print(f"Percentage discovered = {round((pixels_discovered / total_pixels)*100, 2)}%")
 
 
-
-from sklearn import metrics
-from sklearn.cluster import DBSCAN
-
-
 def compute_flocking():
     min_distance = (RAB_RANGE + CLOSE_RANGE_RADIUS)/2
     clusters = []
     noise = []
+    cluster_sizes = []
     for pos_matrix in frame_pos_list:
         #pos_matrix = np.array(pos_list)
         #print(pos_matrix)
@@ -96,10 +104,12 @@ def compute_flocking():
         # Number of clusters in labels, ignoring noise if present.
         unique_labels = set(labels)
         n_clusters_ = len(unique_labels) - (1 if -1 in labels else 0)
-        n_noise_ = list(labels).count(-1) if n_clusters_ > 0 else NUM_ROBOTS
+        n_noise_ = list(labels).count(-1) if n_clusters_ > 0 else num_robs
+        n_count_ = np.bincount(labels[labels>=0]) if n_clusters_ > 0 else [0]
         
         clusters.append(n_clusters_)
         noise.append(n_noise_)
+        cluster_sizes.append(n_count_)
 
         print("Estimated number of clusters: %d" % n_clusters_)
         print("Estimated number of noise points: %d" % n_noise_)
@@ -156,7 +166,10 @@ def compute_flocking():
 
     save_log_to_file(str(clusters), "clusters.log")
     save_log_to_file(str(noise), "noise.log")
+    save_log_to_file(str(cluster_sizes), "cluster_sizes.log")
     
+
+    # Noise + clusters
     xs = range(1, len(clusters)+1)
     plt.plot(xs, clusters, '-.')
     plt.plot(xs, noise, '-.')
@@ -171,6 +184,35 @@ def compute_flocking():
     plt.grid(True)
     plt.title(f'Clusters over time with min_dist {np.round(min_distance, 2)}')
     plt.savefig(f'{output_dir}/line-plot.png')
+    #plt.show()
+    plt.close()
+
+
+    # Cluster sizes
+    max_len = max([len(cs) for cs in cluster_sizes])
+    _cluster_sizes = [[] for _ in range(max_len)]
+    for cs in cluster_sizes:
+        for i in range(max_len):
+            if len(cs) <= i:
+                _cluster_sizes[i].append(0)
+            else:
+                _cluster_sizes[i].append(cs[i])
+    
+    xs = range(1, len(cluster_sizes)+1)
+
+    max_y = 0
+    for cs in _cluster_sizes:
+        max_y = max(max_y, max(cs))
+        plt.plot(xs, cs)
+
+    plt.xlabel("Frame")
+    plt.ylabel("Cluster sizes")
+    plt.xlim(1, len(cluster_sizes)+1)
+    plt.ylim(0, max_y+2)
+    # Plot the normalized coordinates
+    plt.grid(True)
+    plt.title(f'Clusters sizes time with min_dist {np.round(min_distance, 2)}')
+    plt.savefig(f'{output_dir}/cluster-sizes-plot.png')
     #plt.show()
     plt.close()
 
@@ -193,3 +235,4 @@ def log_calculation(func, args: list, result, *, doprint = False):
 def save_log_to_file(s, filename):
     with open(f"{output_dir}/{filename}", "w", encoding="utf-8") as f:
         f.write(s)
+

@@ -179,15 +179,17 @@ class Boid(Robot):
 
     
     ###################### RAB Signals ######################
+    def calc_close_range(self) -> float:
+        return CLOSE_RANGE_RADIUS * (1 - (self.light_intensity/2))
 
     def get_close_boids(self) -> list[Signal]:
         boids : list[Signal] = self.rab_signals
-        close_boids = [boid for boid in boids if boid.distance < CLOSE_RANGE_RADIUS]
+        close_boids = [boid for boid in boids if boid.distance < self.calc_close_range()]
         return close_boids
     
     def get_far_boids(self) -> list[Signal]:
         boids : list[Signal] = self.rab_signals
-        far_boids = [boid for boid in boids if boid.distance >= CLOSE_RANGE_RADIUS]
+        far_boids = [boid for boid in boids if boid.distance >= self.calc_close_range()]
         return far_boids
 
 

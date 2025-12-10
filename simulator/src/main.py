@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 import pygame
 from consts import HEIGHT, WIDTH
@@ -5,7 +6,8 @@ from drawer import draw_light_sources, draw_obstacles
 from game import init_pygame
 from log import compute_metrics, log_metrics, logging_close, logging_init
 from obstacle import OBSTACLES
-from robot import NUM_ROBOTS, ROBOT_RADIUS, Robot, DEBUG_DRAWING
+from robot import ROBOT_RADIUS, Robot, DEBUG_DRAWING
+import robot as rob
 from boid import Boid
 
 # Pygame setup
@@ -28,12 +30,29 @@ ARENA_BOUNDS = {
 }
 
 def main(_seed = 939):
+    frame_count = 0
+    total_time = 0.0
+    running = True
+    paused = False
+    visualize = True
+    dispersion = False
+    verbose = False
+
+    input_argument = sys.argv
+    if len(input_argument) > 1:
+        print("Amount of robots:", sys.argv[1])
+        rob.NUM_ROBOTS = int(sys.argv[1])
+        print("Seed:", sys.argv[2])
+        _seed = int(sys.argv[2])
+        print("Dispersion:", sys.argv[3])
+        dispersion = not bool(sys.argv[2])
+
     clock = pygame.time.Clock()
     dt = SIM_DT
     robots : list[Robot] = []
 
     np.random.seed(_seed)
-    for i in range(NUM_ROBOTS):
+    for i in range(rob.NUM_ROBOTS):
         pos = np.random.uniform([ROBOT_RADIUS, ROBOT_RADIUS], [WIDTH - ROBOT_RADIUS, HEIGHT - ROBOT_RADIUS])
         heading = np.random.uniform(0, 2 * np.pi)
         robots.append(Boid(i, pos, heading))
@@ -42,15 +61,8 @@ def main(_seed = 939):
     for robot in robots:
         robot.controller_init()
 
-    logging_init(_seed)
+    logging_init(_seed, rob.NUM_ROBOTS)
 
-    frame_count = 0
-    total_time = 0.0
-    running = True
-    paused = False
-    visualize = True
-    dispersion = False
-    verbose = False
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -109,7 +121,7 @@ def main(_seed = 939):
             if paused:
                 txt = font.render("PAUSED", True, (255, 100, 100))
                 screen.blit(txt, (10, 30))
-            txt = font.render("Dispersion" if dispersion else "Flocking", True, (255, 100, 100))
+            txt = font.render(f"{rob.NUM_ROBOTS}+{_seed} Dispersion" if dispersion else f"{rob.NUM_ROBOTS}+{_seed} Flocking", True, (255, 100, 100))
             screen.blit(txt, (10, 10))
             pygame.display.flip()
             pygame.display.set_caption("Robot Sim — VISUAL MODE")
@@ -119,7 +131,7 @@ def main(_seed = 939):
             running = False
 
     pygame.quit()
-    logging_close()
+    logging_close(dispersion)
 
 if __name__ == "__main__":
     main()
